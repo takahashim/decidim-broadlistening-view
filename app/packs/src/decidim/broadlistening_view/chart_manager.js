@@ -1,20 +1,32 @@
 // Chart Manager for Broadlistening visualization
-import Plotly from "../../../vendor/plotly-basic-2.35.0.min.js";
+// Orchestrates scatter and treemap charts with toolbar controls
 
-// Color palette for clusters
-const CLUSTER_COLORS = [
-  "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-  "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
-  "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5"
-];
+import { ScatterChart } from "./scatter_chart.js";
+import { TreemapChart } from "./treemap_chart.js";
+import { CLUSTER_COLORS, getColorByIndex } from "./colors.js";
+
+// Chart type constants
+const CHART_TYPES = {
+  SCATTER: "scatter",
+  TREEMAP: "treemap"
+};
+
+// SVG Icons
+const ICONS = {
+  scatter: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="7.5" r="2.5"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+  treemap: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
+  fullscreen: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`,
+  close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  chevronRight: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`
+};
 
 export class ChartManager {
   constructor(container, data, options = {}) {
     this.container = container;
     this.data = data;
     this.options = {
-      defaultChart: "scatter",
-      showFilter: true,
+      defaultChart: CHART_TYPES.SCATTER,
+      showToolbar: true,
       ...options
     };
 
@@ -22,155 +34,465 @@ export class ChartManager {
     this.clusters = data.clusters || [];
     this.comments = data.comments || {};
 
+    // State
+    this.chartType = this.options.defaultChart;
+    this.isFullscreen = false;
+    this.selectedClusterId = null;
+    this.treemapLevel = "0";
+
+    // Calculate max level
+    this.maxLevel = Math.max(...this.clusters.map(c => c.level || 0), 0);
+
+    // Chart instances
+    this.scatterChart = null;
+    this.treemapChart = null;
+
+    // DOM references
+    this.toolbarContainer = null;
+    this.breadcrumbContainer = null;
+    this.chartContainer = null;
+    this.fullscreenModal = null;
+
     this.init();
   }
 
   init() {
     if (this.arguments.length === 0) {
-      this.container.innerHTML = '<p class="callout warning">データがありません。</p>';
+      this.container.innerHTML = '<p class="text-gray text-center py-8">データがありません。</p>';
       return;
     }
 
     this.createLayout();
-    this.renderScatterChart();
+    this.renderChart();
+    this.bindClusterCardEvents();
   }
 
   createLayout() {
     this.container.innerHTML = `
-      <div class="broadlistening-view-chart">
-        <div class="broadlistening-view-chart__plot" id="scatter-plot-${this.container.id || 'main'}"></div>
+      <div class="blv-chart-wrapper">
+        <div class="blv-toolbar"></div>
+        <div class="blv-breadcrumb"></div>
+        <div class="blv-chart-container"></div>
       </div>
     `;
 
-    this.plotContainer = this.container.querySelector(".broadlistening-view-chart__plot");
+    this.toolbarContainer = this.container.querySelector(".blv-toolbar");
+    this.breadcrumbContainer = this.container.querySelector(".blv-breadcrumb");
+    this.chartContainer = this.container.querySelector(".blv-chart-container");
+
+    if (this.options.showToolbar) {
+      this.renderToolbar();
+    }
   }
 
-  renderScatterChart() {
-    const colors = this.getPointColors();
-    const annotations = this.getClusterAnnotations();
+  renderToolbar() {
+    this.toolbarContainer.innerHTML = `
+      <div class="blv-toolbar__buttons">
+        <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.SCATTER ? 'blv-toolbar__btn--active' : ''}"
+                data-chart-type="${CHART_TYPES.SCATTER}"
+                title="散布図">
+          ${ICONS.scatter}
+          <span>散布図</span>
+        </button>
+        <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.TREEMAP ? 'blv-toolbar__btn--active' : ''}"
+                data-chart-type="${CHART_TYPES.TREEMAP}"
+                title="ツリーマップ">
+          ${ICONS.treemap}
+          <span>ツリー</span>
+        </button>
+      </div>
+      <div class="blv-toolbar__actions">
+        <button class="blv-toolbar__btn blv-toolbar__btn--icon"
+                data-action="fullscreen"
+                title="フルスクリーン">
+          ${ICONS.fullscreen}
+        </button>
+      </div>
+    `;
 
-    const trace = {
-      x: this.arguments.map(a => a.x),
-      y: this.arguments.map(a => a.y),
-      mode: "markers",
-      type: "scattergl",
-      marker: {
-        color: colors,
-        size: 6,
-        opacity: 0.7
-      },
-      text: this.arguments.map(a => this.formatHoverText(a)),
-      hoverinfo: "text",
-      hoverlabel: {
-        bgcolor: "white",
-        font: { size: 12 }
-      }
-    };
+    // Add event listeners
+    this.toolbarContainer.querySelectorAll("[data-chart-type]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const type = e.currentTarget.dataset.chartType;
+        this.switchChart(type);
+      });
+    });
 
-    const layout = {
-      showlegend: false,
-      hovermode: "closest",
-      dragmode: "pan",
-      xaxis: {
-        showgrid: false,
-        zeroline: false,
-        showticklabels: false,
-        title: ""
-      },
-      yaxis: {
-        showgrid: false,
-        zeroline: false,
-        showticklabels: false,
-        title: ""
-      },
-      margin: { l: 20, r: 20, t: 20, b: 20 },
-      annotations: annotations,
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)"
-    };
-
-    const config = {
-      responsive: true,
-      displayModeBar: true,
-      modeBarButtonsToRemove: ["select2d", "lasso2d", "resetScale2d", "toImage"],
-      displaylogo: false,
-      scrollZoom: true
-    };
-
-    Plotly.newPlot(this.plotContainer, [trace], layout, config);
-  }
-
-  getPointColors() {
-    return this.arguments.map(arg => {
-      const clusterIds = arg.cluster_ids || [];
-      // Use level 1 cluster for coloring (index 1 in cluster_ids array)
-      const level1ClusterId = clusterIds[1];
-      if (!level1ClusterId) {
-        return "#cccccc";
-      }
-
-      // Extract cluster index from id like "1_0", "1_1", etc.
-      const match = level1ClusterId.match(/_(\d+)$/);
-      if (match) {
-        const index = parseInt(match[1], 10);
-        return CLUSTER_COLORS[index % CLUSTER_COLORS.length];
-      }
-
-      return "#cccccc";
+    this.toolbarContainer.querySelector("[data-action='fullscreen']").addEventListener("click", () => {
+      this.toggleFullscreen();
     });
   }
 
-  getClusterAnnotations() {
-    // Get level 1 clusters for annotations
-    const level1Clusters = this.clusters.filter(c => c.level === 1);
+  renderBreadcrumb() {
+    if (!this.selectedClusterId || this.chartType !== CHART_TYPES.SCATTER) {
+      this.breadcrumbContainer.innerHTML = "";
+      this.breadcrumbContainer.style.display = "none";
+      return;
+    }
 
-    return level1Clusters.map(cluster => {
-      // Calculate centroid for this cluster
-      const clusterPoints = this.arguments.filter(arg =>
-        arg.cluster_ids && arg.cluster_ids.includes(cluster.id)
-      );
+    const path = this.buildClusterPath(this.selectedClusterId);
+    if (path.length === 0) {
+      this.breadcrumbContainer.innerHTML = "";
+      this.breadcrumbContainer.style.display = "none";
+      return;
+    }
 
-      if (clusterPoints.length === 0) {
-        return null;
-      }
+    this.breadcrumbContainer.style.display = "block";
+    this.breadcrumbContainer.innerHTML = `
+      <div class="blv-breadcrumb__content">
+        <span class="blv-breadcrumb__label">表示中:</span>
+        <nav class="blv-breadcrumb__nav">
+          <button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="">
+            全て
+          </button>
+          ${path.map((cluster, index) => `
+            <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
+            ${index === path.length - 1
+              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${cluster.label}</span>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${cluster.label}</button>`
+            }
+          `).join("")}
+        </nav>
+      </div>
+    `;
 
-      const centroid = {
-        x: clusterPoints.reduce((sum, p) => sum + p.x, 0) / clusterPoints.length,
-        y: clusterPoints.reduce((sum, p) => sum + p.y, 0) / clusterPoints.length
-      };
-
-      return {
-        x: centroid.x,
-        y: centroid.y,
-        text: cluster.label,
-        showarrow: false,
-        font: {
-          size: 11,
-          color: "#333"
-        },
-        bgcolor: "rgba(255, 255, 255, 0.8)",
-        borderpad: 4
-      };
-    }).filter(a => a !== null);
+    // Add click handlers for breadcrumb navigation
+    this.breadcrumbContainer.querySelectorAll("[data-cluster-id]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const clusterId = e.currentTarget.dataset.clusterId;
+        this.navigateToCluster(clusterId || null);
+      });
+    });
   }
 
-  formatHoverText(argument) {
-    const lines = [];
+  buildClusterPath(clusterId) {
+    const path = [];
+    let currentId = clusterId;
 
-    // Add argument text (truncated)
-    const text = argument.argument || "";
-    const truncated = text.length > 100 ? text.substring(0, 100) + "..." : text;
-    lines.push(truncated);
-
-    // Add cluster info
-    if (argument.cluster_ids && argument.cluster_ids.length > 1) {
-      const clusterId = argument.cluster_ids[1];
-      const cluster = this.clusters.find(c => c.id === clusterId);
+    while (currentId && currentId !== "0") {
+      const cluster = this.clusters.find(c => c.id === currentId);
       if (cluster) {
-        lines.push(`[${cluster.label}]`);
+        path.unshift(cluster);
+        currentId = cluster.parent;
+      } else {
+        break;
       }
     }
 
-    return lines.join("<br>");
+    return path;
+  }
+
+  updateToolbarState() {
+    this.toolbarContainer.querySelectorAll("[data-chart-type]").forEach(btn => {
+      const isActive = btn.dataset.chartType === this.chartType;
+      btn.classList.toggle("blv-toolbar__btn--active", isActive);
+    });
+  }
+
+  switchChart(type) {
+    if (this.chartType === type) return;
+
+    this.chartType = type;
+    // Reset cluster selection when switching chart types
+    if (type === CHART_TYPES.TREEMAP) {
+      this.selectedClusterId = null;
+    }
+    this.updateToolbarState();
+    this.renderBreadcrumb();
+    this.renderChart();
+    this.updateClusterCardHighlights();
+  }
+
+  navigateToCluster(clusterId) {
+    this.selectedClusterId = clusterId;
+    this.renderBreadcrumb();
+    this.renderChart();
+    this.updateClusterCardHighlights();
+  }
+
+  renderChart() {
+    // Destroy existing chart
+    if (this.scatterChart) {
+      this.scatterChart.destroy();
+      this.scatterChart = null;
+    }
+    if (this.treemapChart) {
+      this.treemapChart.destroy();
+      this.treemapChart = null;
+    }
+
+    // Clear container
+    this.chartContainer.innerHTML = '<div class="blv-chart-plot"></div>';
+    const plotContainer = this.chartContainer.querySelector(".blv-chart-plot");
+
+    // Render the appropriate chart
+    if (this.chartType === CHART_TYPES.SCATTER) {
+      this.scatterChart = new ScatterChart(plotContainer, this.data, {
+        selectedClusterId: this.selectedClusterId,
+        targetLevel: 1
+      });
+      this.scatterChart.render();
+    } else if (this.chartType === CHART_TYPES.TREEMAP) {
+      this.treemapChart = new TreemapChart(plotContainer, this.data, {
+        level: this.treemapLevel,
+        onLevelChange: (level) => {
+          this.treemapLevel = level;
+        }
+      });
+      this.treemapChart.render();
+    }
+  }
+
+  toggleFullscreen() {
+    if (this.isFullscreen) {
+      this.exitFullscreen();
+    } else {
+      this.enterFullscreen();
+    }
+  }
+
+  enterFullscreen() {
+    this.isFullscreen = true;
+
+    // Create fullscreen modal
+    this.fullscreenModal = document.createElement("div");
+    this.fullscreenModal.className = "blv-fullscreen-modal";
+    this.fullscreenModal.innerHTML = `
+      <div class="blv-fullscreen-modal__header">
+        <div class="blv-toolbar__buttons">
+          <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.SCATTER ? 'blv-toolbar__btn--active' : ''}"
+                  data-chart-type="${CHART_TYPES.SCATTER}"
+                  title="散布図">
+            ${ICONS.scatter}
+            <span>散布図</span>
+          </button>
+          <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.TREEMAP ? 'blv-toolbar__btn--active' : ''}"
+                  data-chart-type="${CHART_TYPES.TREEMAP}"
+                  title="ツリーマップ">
+            ${ICONS.treemap}
+            <span>ツリー</span>
+          </button>
+        </div>
+        <button class="blv-fullscreen-modal__close" data-action="close" title="閉じる">
+          ${ICONS.close}
+        </button>
+      </div>
+      <div class="blv-fullscreen-modal__breadcrumb"></div>
+      <div class="blv-fullscreen-modal__content">
+        <div class="blv-chart-plot blv-chart-plot--fullscreen"></div>
+      </div>
+    `;
+
+    document.body.appendChild(this.fullscreenModal);
+    document.body.style.overflow = "hidden";
+
+    // Add event listeners
+    this.fullscreenModal.querySelectorAll("[data-chart-type]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const type = e.currentTarget.dataset.chartType;
+        this.chartType = type;
+        if (type === CHART_TYPES.TREEMAP) {
+          this.selectedClusterId = null;
+        }
+        this.updateFullscreenToolbar();
+        this.renderFullscreenBreadcrumb();
+        this.renderFullscreenChart();
+      });
+    });
+
+    this.fullscreenModal.querySelector("[data-action='close']").addEventListener("click", () => {
+      this.exitFullscreen();
+    });
+
+    // Handle escape key
+    this.escapeHandler = (e) => {
+      if (e.key === "Escape") {
+        this.exitFullscreen();
+      }
+    };
+    document.addEventListener("keydown", this.escapeHandler);
+
+    // Render chart in fullscreen
+    this.renderFullscreenBreadcrumb();
+    this.renderFullscreenChart();
+  }
+
+  updateFullscreenToolbar() {
+    if (!this.fullscreenModal) return;
+
+    this.fullscreenModal.querySelectorAll("[data-chart-type]").forEach(btn => {
+      const isActive = btn.dataset.chartType === this.chartType;
+      btn.classList.toggle("blv-toolbar__btn--active", isActive);
+    });
+  }
+
+  renderFullscreenBreadcrumb() {
+    if (!this.fullscreenModal) return;
+
+    const breadcrumbContainer = this.fullscreenModal.querySelector(".blv-fullscreen-modal__breadcrumb");
+
+    if (!this.selectedClusterId || this.chartType !== CHART_TYPES.SCATTER) {
+      breadcrumbContainer.innerHTML = "";
+      return;
+    }
+
+    const path = this.buildClusterPath(this.selectedClusterId);
+    if (path.length === 0) {
+      breadcrumbContainer.innerHTML = "";
+      return;
+    }
+
+    breadcrumbContainer.innerHTML = `
+      <div class="blv-breadcrumb__content">
+        <span class="blv-breadcrumb__label">表示中:</span>
+        <nav class="blv-breadcrumb__nav">
+          <button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="">
+            全て
+          </button>
+          ${path.map((cluster, index) => `
+            <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
+            ${index === path.length - 1
+              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${cluster.label}</span>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${cluster.label}</button>`
+            }
+          `).join("")}
+        </nav>
+      </div>
+    `;
+
+    // Add click handlers
+    breadcrumbContainer.querySelectorAll("[data-cluster-id]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const clusterId = e.currentTarget.dataset.clusterId;
+        this.selectedClusterId = clusterId || null;
+        this.renderFullscreenBreadcrumb();
+        this.renderFullscreenChart();
+        this.updateClusterCardHighlights();
+      });
+    });
+  }
+
+  renderFullscreenChart() {
+    if (!this.fullscreenModal) return;
+
+    const plotContainer = this.fullscreenModal.querySelector(".blv-chart-plot");
+    plotContainer.innerHTML = "";
+
+    if (this.chartType === CHART_TYPES.SCATTER) {
+      const chart = new ScatterChart(plotContainer, this.data, {
+        selectedClusterId: this.selectedClusterId,
+        targetLevel: 1
+      });
+      chart.render();
+    } else if (this.chartType === CHART_TYPES.TREEMAP) {
+      const chart = new TreemapChart(plotContainer, this.data, {
+        level: this.treemapLevel,
+        onLevelChange: (level) => {
+          this.treemapLevel = level;
+        }
+      });
+      chart.render();
+    }
+  }
+
+  exitFullscreen() {
+    this.isFullscreen = false;
+
+    if (this.fullscreenModal) {
+      document.body.removeChild(this.fullscreenModal);
+      this.fullscreenModal = null;
+    }
+
+    document.body.style.overflow = "";
+
+    if (this.escapeHandler) {
+      document.removeEventListener("keydown", this.escapeHandler);
+      this.escapeHandler = null;
+    }
+
+    // Update main toolbar and re-render chart
+    this.updateToolbarState();
+    this.renderBreadcrumb();
+    this.renderChart();
+  }
+
+  /**
+   * Bind click events to cluster cards on the page
+   */
+  bindClusterCardEvents() {
+    // Find cluster cards in the page and bind click events
+    const clusterCards = document.querySelectorAll("[data-cluster-id]");
+    clusterCards.forEach(card => {
+      card.style.cursor = "pointer";
+      card.addEventListener("click", (e) => {
+        e.preventDefault();
+        const clusterId = card.dataset.clusterId;
+        if (clusterId) {
+          this.handleClusterCardClick(clusterId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Handle cluster card click
+   * @param {string} clusterId - Cluster ID that was clicked
+   */
+  handleClusterCardClick(clusterId) {
+    // Check if this cluster has children
+    const children = this.getChildClusters(clusterId);
+
+    if (children.length > 0) {
+      // Switch to scatter if not already
+      if (this.chartType !== CHART_TYPES.SCATTER) {
+        this.chartType = CHART_TYPES.SCATTER;
+        this.updateToolbarState();
+      }
+      this.navigateToCluster(clusterId);
+    }
+  }
+
+  /**
+   * Get child clusters of a parent
+   * @param {string} parentId - Parent cluster ID
+   * @returns {Array} Child clusters sorted by value
+   */
+  getChildClusters(parentId) {
+    return this.clusters
+      .filter(c => c.parent === parentId)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+  }
+
+  /**
+   * Update visual state of cluster cards based on selection
+   */
+  updateClusterCardHighlights() {
+    const clusterCards = document.querySelectorAll("[data-cluster-id]");
+    clusterCards.forEach(card => {
+      const clusterId = card.dataset.clusterId;
+      const isSelected = clusterId === this.selectedClusterId;
+      const isInPath = this.selectedClusterId && this.buildClusterPath(this.selectedClusterId).some(c => c.id === clusterId);
+
+      card.classList.toggle("blv-cluster-card--selected", isSelected);
+      card.classList.toggle("blv-cluster-card--in-path", isInPath && !isSelected);
+    });
+  }
+
+  /**
+   * Get top-level clusters for display
+   * @returns {Array} Level 1 clusters sorted by value
+   */
+  getTopLevelClusters() {
+    return this.clusters
+      .filter(c => c.level === 1)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+  }
+
+  /**
+   * Public method to select a cluster programmatically
+   * @param {string|null} clusterId - Cluster ID to select, or null to clear
+   */
+  selectCluster(clusterId) {
+    this.navigateToCluster(clusterId);
   }
 }

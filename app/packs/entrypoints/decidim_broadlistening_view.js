@@ -2,10 +2,18 @@
 import "../stylesheets/decidim/broadlistening_view/app.scss";
 
 import { ChartManager } from "../src/decidim/broadlistening_view/chart_manager";
+import { ScatterChart } from "../src/decidim/broadlistening_view/scatter_chart";
+import { TreemapChart } from "../src/decidim/broadlistening_view/treemap_chart";
+import { CLUSTER_COLORS, getClusterColor, getColorByIndex } from "../src/decidim/broadlistening_view/colors";
 
 // Export for global access
 window.DecidimBroadlisteningView = {
   ChartManager,
+  ScatterChart,
+  TreemapChart,
+  CLUSTER_COLORS,
+  getClusterColor,
+  getColorByIndex,
 };
 
 // Auto-initialize charts on DOM ready

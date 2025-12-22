@@ -101,3 +101,4 @@ en:
           cluster_count:
             one: "%{count} opinion"
             other: "%{count} opinions"
+          chart_help: Drag to pan, scroll to zoom. Click on a cluster in the treemap to see details.

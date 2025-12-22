@@ -1,5 +1,6 @@
 <% add_decidim_page_title(report.title) %>
 <%= append_javascript_pack_tag "decidim_broadlistening_view" %>
+<%= append_stylesheet_pack_tag "decidim_broadlistening_view" %>
 
 <%= render layout: "layouts/decidim/shared/layout_center", locals: { columns: 10 } do %>
 
@@ -32,28 +33,35 @@
 
       <div data-broadlistening-view-manager
            data-data-source="report-data-<%= report.id %>"
-           id="chart-container-<%= report.id %>"
-           class="bg-white rounded-lg border border-gray-3"
-           style="min-height: 600px;">
+           id="chart-container-<%= report.id %>">
       </div>
+
+      <p class="text-sm text-gray text-center mt-2">
+        <%= t("decidim.broadlistening_view.reports.show.chart_help") %>
+      </p>
     </section>
 
     <% if report.top_level_clusters.any? %>
       <section class="layout-main__section">
         <h3 class="h4 decorator mb-4"><%= t("decidim.broadlistening_view.reports.show.cluster_overview") %></h3>
 
-        <div class="grid gap-4">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           <% report.top_level_clusters.each_with_index do |cluster, index| %>
-            <div class="card p-4" style="border-left: 4px solid <%= cluster_color(index) %>;">
+            <div class="card p-4 hover:shadow-md transition-shadow cursor-pointer"
+                 style="border-left: 4px solid <%= cluster_color(index) %>;"
+                 data-cluster-id="<%= cluster["id"] %>"
+                 title="クリックしてサブクラスターを表示">
               <div class="flex items-center gap-3 mb-2">
-                <span class="inline-block w-4 h-4 rounded-full" style="background-color: <%= cluster_color(index) %>;"></span>
-                <span class="font-semibold"><%= cluster["label"] %></span>
-                <span class="text-sm text-gray ml-auto">
+                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: <%= cluster_color(index) %>;"></span>
+                <span class="font-semibold text-sm line-clamp-2"><%= cluster["label"] %></span>
+              </div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: <%= cluster_color(index) %>20; color: <%= cluster_color(index) %>;">
                   <%= t("decidim.broadlistening_view.reports.show.cluster_count", count: cluster["value"]) %>
                 </span>
               </div>
               <% if cluster["takeaway"].present? %>
-                <p class="text-gray-2 text-sm"><%= cluster["takeaway"] %></p>
+                <p class="text-gray-2 text-sm line-clamp-3"><%= cluster["takeaway"] %></p>
               <% end %>
             </div>
           <% end %>
