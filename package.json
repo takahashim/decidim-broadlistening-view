@@ -3,8 +3,5 @@
   "version": "0.1.0",
   "description": "Decidim component for displaying broadlistening visualizations",
   "main": "app/packs/entrypoints/decidim_broadlistening_view.js",
-  "dependencies": {
-    "plotly.js-basic-dist-min": "^2.35.0"
-  },
   "license": "AGPL-3.0"
 }

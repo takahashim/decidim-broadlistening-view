@@ -1,5 +1,5 @@
 // Chart Manager for Broadlistening visualization
-import Plotly from "plotly.js-basic-dist-min";
+import Plotly from "../../../vendor/plotly-basic-2.35.0.min.js";
 
 // Color palette for clusters
 const CLUSTER_COLORS = [
