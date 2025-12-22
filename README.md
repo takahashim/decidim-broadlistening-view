@@ -4,18 +4,23 @@ A Decidim component for displaying pre-computed broadlistening analysis results 
 
 ## Features
 
-- Display `hierarchical_result.json` data from broadlistening-ruby
+- Display `hierarchical_result.json` data from [kouchou-ai](https://github.com/digitaldemocracy2030/kouchou-ai/)
 - Interactive scatter plot visualization using Plotly.js
-- Cluster overview with color-coded cards
+- Hierarchical cluster display
 - Admin interface for uploading JSON files or direct input
 - Japanese and English localization
+
+## Requirements
+
+- Decidim 0.29.x
+- Ruby 3.1+
 
 ## Installation
 
 Add to your Decidim application's Gemfile:
 
 ```ruby
-gem "decidim-broadlistening-view"
+gem "decidim-broadlistening-view", git: "https://github.com/takahashim/decidim-broadlistening-view.git"
 ```
 
 Run:
@@ -28,14 +33,14 @@ bin/rails db:migrate
 
 ## Usage
 
-1. Add the "Broadlistening Viewer" component to a participatory space
+1. Add the "Broadlistening Viewer" component to a participatory space (Assembly, Process, etc.)
 2. In the admin panel, create a new report
 3. Upload a `hierarchical_result.json` file or paste JSON directly
 4. Publish the report to make it visible to users
 
 ## JSON Format
 
-The component expects JSON data in the `hierarchical_result.json` format from broadlistening-ruby:
+The component expects JSON data in the `hierarchical_result.json` format from [kouchou-ai](https://github.com/digitaldemocracy2030/kouchou-ai/):
 
 ```json
 {
@@ -63,8 +68,26 @@ The component expects JSON data in the `hierarchical_result.json` format from br
   "comments": {},
   "propertyMap": {},
   "translations": {},
-  "config": {}
+  "config": {},
+  "comment_num": 100
 }
+```
+
+## Vendored Libraries
+
+This gem includes the following vendored libraries:
+
+- [Plotly.js Basic](https://plotly.com/javascript/) v2.35.0 (MIT License)
+
+## Development
+
+```bash
+# Clone the repository
+git clone https://github.com/takahashim/decidim-broadlistening-view.git
+cd decidim-broadlistening-view
+
+# Install dependencies
+bundle install
 ```
 
 ## License
