@@ -1,6 +1,6 @@
 // Scatter Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
-import { getClusterColor, INACTIVE_COLOR, CLUSTER_COLORS } from "./colors.js";
+import { getClusterColor, INACTIVE_COLOR } from "./colors.js";
 
 /**
  * Wrap text to specified character limit
@@ -36,7 +36,6 @@ export class ScatterChart {
     this.container = container;
     this.arguments = data.arguments || [];
     this.clusters = data.clusters || [];
-    this.comments = data.comments || {};
     this.options = {
       targetLevel: 1,
       selectedClusterId: null,
@@ -44,8 +43,17 @@ export class ScatterChart {
       ...options
     };
 
-    // Calculate max level
-    this.maxLevel = Math.max(...this.clusters.map(c => c.level || 0), 0);
+    // Build cluster indexes for O(1) lookups
+    this.clusterById = new Map(this.clusters.map(c => [c.id, c]));
+    this.childrenByParent = new Map();
+    for (const cluster of this.clusters) {
+      if (cluster.parent) {
+        if (!this.childrenByParent.has(cluster.parent)) {
+          this.childrenByParent.set(cluster.parent, []);
+        }
+        this.childrenByParent.get(cluster.parent).push(cluster);
+      }
+    }
   }
 
   render() {
@@ -121,6 +129,13 @@ export class ScatterChart {
   getPointColors() {
     const { targetLevel, selectedClusterId, filteredArgumentIds } = this.options;
 
+    // Pre-compute child cluster IDs for selected cluster (if any)
+    let childIds = null;
+    if (selectedClusterId) {
+      const childClusters = this.childrenByParent.get(selectedClusterId) || [];
+      childIds = new Set(childClusters.map(c => c.id));
+    }
+
     return this.arguments.map(arg => {
       // Check if argument is filtered out
       if (filteredArgumentIds && !filteredArgumentIds.has(arg.arg_id)) {
@@ -130,17 +145,11 @@ export class ScatterChart {
       const clusterIds = arg.cluster_ids || [];
 
       // If a cluster is selected, show children of that cluster
-      if (selectedClusterId) {
-        // Get child clusters of the selected cluster
-        const childClusters = this.clusters.filter(c => c.parent === selectedClusterId);
-        const childIds = new Set(childClusters.map(c => c.id));
-
+      if (selectedClusterId && childIds) {
         // Check if this point belongs to one of the child clusters
-        const belongsToChild = clusterIds.some(id => childIds.has(id));
-        if (belongsToChild) {
-          // Find which child cluster it belongs to
-          const childId = clusterIds.find(id => childIds.has(id));
-          return childId ? getClusterColor(childId) : INACTIVE_COLOR;
+        const childId = clusterIds.find(id => childIds.has(id));
+        if (childId) {
+          return getClusterColor(childId);
         }
         return INACTIVE_COLOR;
       }
@@ -198,7 +207,7 @@ export class ScatterChart {
 
     if (selectedClusterId) {
       // Show children of selected cluster
-      clustersToShow = this.clusters.filter(c => c.parent === selectedClusterId);
+      clustersToShow = this.childrenByParent.get(selectedClusterId) || [];
       const childLevel = clustersToShow[0]?.level || targetLevel + 1;
       clusterPoints = this.groupPointsByCluster(childLevel);
     } else {
@@ -249,19 +258,18 @@ export class ScatterChart {
 
     if (selectedClusterId) {
       // Show child cluster label
-      const childClusters = this.clusters.filter(c => c.parent === selectedClusterId);
-      const childId = argument.cluster_ids.find(id =>
-        childClusters.some(c => c.id === id)
-      );
+      const childClusters = this.childrenByParent.get(selectedClusterId) || [];
+      const childIds = new Set(childClusters.map(c => c.id));
+      const childId = argument.cluster_ids.find(id => childIds.has(id));
       if (childId) {
-        const cluster = this.clusters.find(c => c.id === childId);
+        const cluster = this.clusterById.get(childId);
         if (cluster) {
           lines.push(`<b>[${cluster.label}]</b>`);
         }
       }
     } else if (argument.cluster_ids && argument.cluster_ids.length > targetLevel) {
       const clusterId = this.getClusterIdAtLevel(argument.cluster_ids, targetLevel);
-      const cluster = this.clusters.find(c => c.id === clusterId);
+      const cluster = this.clusterById.get(clusterId);
       if (cluster) {
         lines.push(`<b>[${cluster.label}]</b>`);
       }

@@ -43,20 +43,3 @@ export function getClusterColor(clusterId) {
 export function getColorByIndex(index) {
   return CLUSTER_COLORS[index % CLUSTER_COLORS.length];
 }
-
-/**
- * Convert hex color to rgba with opacity
- * @param {string} hex - Hex color string
- * @param {number} opacity - Opacity value (0-1)
- * @returns {string} RGBA color string
- */
-export function hexToRgba(hex, opacity = 1) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return hex;
-
-  const r = parseInt(result[1], 16);
-  const g = parseInt(result[2], 16);
-  const b = parseInt(result[3], 16);
-
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}

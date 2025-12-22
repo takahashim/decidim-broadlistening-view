@@ -3,7 +3,7 @@
 
 import { ScatterChart } from "./scatter_chart.js";
 import { TreemapChart } from "./treemap_chart.js";
-import { CLUSTER_COLORS, getColorByIndex } from "./colors.js";
+import { CLUSTER_COLORS } from "./colors.js";
 
 // Chart type constants
 const CHART_TYPES = {
@@ -32,16 +32,29 @@ export class ChartManager {
 
     this.arguments = data.arguments || [];
     this.clusters = data.clusters || [];
-    this.comments = data.comments || {};
+
+    // Build cluster indexes for O(1) lookups
+    this.clusterById = new Map(this.clusters.map(c => [c.id, c]));
+    this.childrenByParent = new Map();
+    for (const cluster of this.clusters) {
+      const parentId = cluster.parent;
+      if (parentId) {
+        if (!this.childrenByParent.has(parentId)) {
+          this.childrenByParent.set(parentId, []);
+        }
+        this.childrenByParent.get(parentId).push(cluster);
+      }
+    }
+    // Sort children by value descending
+    for (const children of this.childrenByParent.values()) {
+      children.sort((a, b) => (b.value || 0) - (a.value || 0));
+    }
 
     // State
     this.chartType = this.options.defaultChart;
     this.isFullscreen = false;
     this.selectedClusterId = null;
     this.treemapLevel = "0";
-
-    // Calculate max level
-    this.maxLevel = Math.max(...this.clusters.map(c => c.level || 0), 0);
 
     // Chart instances
     this.scatterChart = null;
@@ -176,7 +189,7 @@ export class ChartManager {
     let currentId = clusterId;
 
     while (currentId && currentId !== "0") {
-      const cluster = this.clusters.find(c => c.id === currentId);
+      const cluster = this.clusterById.get(currentId);
       if (cluster) {
         path.unshift(cluster);
         currentId = cluster.parent;
@@ -516,27 +529,29 @@ export class ChartManager {
   }
 
   /**
-   * Bind click events to cluster cards on the page
+   * Bind click events to cluster cards using event delegation
    */
   bindClusterCardEvents() {
-    // Find cluster cards in the page and bind click events
-    const clusterCards = document.querySelectorAll("[data-cluster-id]");
-    clusterCards.forEach(card => {
-      const clusterId = card.dataset.clusterId;
-      const hasChildren = this.getChildClusters(clusterId).length > 0;
+    if (!this.clusterGridContainer) return;
 
-      if (hasChildren) {
-        card.style.cursor = "pointer";
-        card.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (clusterId) {
-            this.handleClusterCardClick(clusterId);
-          }
-        });
-      } else {
-        card.style.cursor = "default";
+    // Remove old handler if exists
+    if (this._clusterGridClickHandler) {
+      this.clusterGridContainer.removeEventListener("click", this._clusterGridClickHandler);
+    }
+
+    // Create handler with event delegation
+    this._clusterGridClickHandler = (e) => {
+      const card = e.target.closest("[data-cluster-id]");
+      if (!card) return;
+
+      const clusterId = card.dataset.clusterId;
+      if (clusterId && this.getChildClusters(clusterId).length > 0) {
+        e.preventDefault();
+        this.handleClusterCardClick(clusterId);
       }
-    });
+    };
+
+    this.clusterGridContainer.addEventListener("click", this._clusterGridClickHandler);
   }
 
   /**
@@ -560,27 +575,10 @@ export class ChartManager {
   /**
    * Get child clusters of a parent
    * @param {string} parentId - Parent cluster ID
-   * @returns {Array} Child clusters sorted by value
+   * @returns {Array} Child clusters sorted by value (already sorted)
    */
   getChildClusters(parentId) {
-    return this.clusters
-      .filter(c => c.parent === parentId)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-  }
-
-  /**
-   * Update visual state of cluster cards based on selection
-   */
-  updateClusterCardHighlights() {
-    const clusterCards = document.querySelectorAll("[data-cluster-id]");
-    clusterCards.forEach(card => {
-      const clusterId = card.dataset.clusterId;
-      const isSelected = clusterId === this.selectedClusterId;
-      const isInPath = this.selectedClusterId && this.buildClusterPath(this.selectedClusterId).some(c => c.id === clusterId);
-
-      card.classList.toggle("blv-cluster-card--selected", isSelected);
-      card.classList.toggle("blv-cluster-card--in-path", isInPath && !isSelected);
-    });
+    return this.childrenByParent.get(parentId) || [];
   }
 
   /**
@@ -588,16 +586,7 @@ export class ChartManager {
    * @returns {Array} Level 1 clusters sorted by value
    */
   getTopLevelClusters() {
-    return this.clusters
-      .filter(c => c.level === 1)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-  }
-
-  /**
-   * Public method to select a cluster programmatically
-   * @param {string|null} clusterId - Cluster ID to select, or null to clear
-   */
-  selectCluster(clusterId) {
-    this.navigateToCluster(clusterId);
+    // Root cluster "0" has level 1 children
+    return this.childrenByParent.get("0") || [];
   }
 }
