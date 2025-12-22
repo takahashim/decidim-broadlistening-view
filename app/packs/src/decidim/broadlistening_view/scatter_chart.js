@@ -43,15 +43,46 @@ export class ScatterChart {
       ...options
     };
 
-    // Build cluster indexes for O(1) lookups
+    // Use pre-built indexes if provided, otherwise build them
+    if (this.options.clusterById) {
+      this.clusterById = this.options.clusterById;
+      this.childrenByParent = this.options.childrenByParent;
+      this.clustersByLevel = this.options.clustersByLevel;
+      this.argumentsByClusterId = this.options.argumentsByClusterId;
+    } else {
+      this.buildIndexes();
+    }
+  }
+
+  /**
+   * Build cluster and argument indexes for O(1) lookups
+   * Called only when indexes are not provided via options
+   */
+  buildIndexes() {
     this.clusterById = new Map(this.clusters.map(c => [c.id, c]));
     this.childrenByParent = new Map();
+    this.clustersByLevel = new Map();
     for (const cluster of this.clusters) {
       if (cluster.parent) {
         if (!this.childrenByParent.has(cluster.parent)) {
           this.childrenByParent.set(cluster.parent, []);
         }
         this.childrenByParent.get(cluster.parent).push(cluster);
+      }
+      const level = cluster.level ?? 0;
+      if (!this.clustersByLevel.has(level)) {
+        this.clustersByLevel.set(level, []);
+      }
+      this.clustersByLevel.get(level).push(cluster);
+    }
+
+    this.argumentsByClusterId = new Map();
+    for (const arg of this.arguments) {
+      for (const clusterId of (arg.cluster_ids || [])) {
+        if (!this.argumentsByClusterId.has(clusterId)) {
+          this.argumentsByClusterId.set(clusterId, []);
+        }
+        this.argumentsByClusterId.get(clusterId).push(arg);
       }
     }
   }
@@ -177,52 +208,26 @@ export class ScatterChart {
     };
   }
 
-  /**
-   * Group points by cluster ID at a specific level
-   */
-  groupPointsByCluster(clusterLevel) {
-    const groups = new Map();
-
-    this.arguments.forEach(arg => {
-      const clusterId = arg.cluster_ids.find(id => {
-        const level = parseInt(id.split("_")[0], 10);
-        return level === clusterLevel;
-      });
-
-      if (clusterId) {
-        const existing = groups.get(clusterId) || [];
-        existing.push(arg);
-        groups.set(clusterId, existing);
-      }
-    });
-
-    return groups;
-  }
-
   getClusterAnnotations() {
     const { targetLevel, selectedClusterId } = this.options;
 
     let clustersToShow;
-    let clusterPoints;
 
     if (selectedClusterId) {
       // Show children of selected cluster
       clustersToShow = this.childrenByParent.get(selectedClusterId) || [];
-      const childLevel = clustersToShow[0]?.level || targetLevel + 1;
-      clusterPoints = this.groupPointsByCluster(childLevel);
     } else {
       // Show target level clusters
-      clustersToShow = this.clusters.filter(c => c.level === targetLevel);
-      clusterPoints = this.groupPointsByCluster(targetLevel);
+      clustersToShow = this.clustersByLevel.get(targetLevel) || [];
     }
 
     return clustersToShow
       .filter(cluster => {
-        const points = clusterPoints.get(cluster.id);
+        const points = this.argumentsByClusterId.get(cluster.id);
         return points && points.length > 0;
       })
       .map(cluster => {
-        const points = clusterPoints.get(cluster.id);
+        const points = this.argumentsByClusterId.get(cluster.id);
         const centroid = this.calculateCentroid(points);
 
         if (!centroid) return null;

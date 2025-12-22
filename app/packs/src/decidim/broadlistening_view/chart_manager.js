@@ -33,9 +33,10 @@ export class ChartManager {
     this.arguments = data.arguments || [];
     this.clusters = data.clusters || [];
 
-    // Build cluster indexes for O(1) lookups
+    // Build cluster indexes for O(1) lookups (shared with ScatterChart)
     this.clusterById = new Map(this.clusters.map(c => [c.id, c]));
     this.childrenByParent = new Map();
+    this.clustersByLevel = new Map();
     for (const cluster of this.clusters) {
       const parentId = cluster.parent;
       if (parentId) {
@@ -44,10 +45,26 @@ export class ChartManager {
         }
         this.childrenByParent.get(parentId).push(cluster);
       }
+      const level = cluster.level ?? 0;
+      if (!this.clustersByLevel.has(level)) {
+        this.clustersByLevel.set(level, []);
+      }
+      this.clustersByLevel.get(level).push(cluster);
     }
     // Sort children by value descending
     for (const children of this.childrenByParent.values()) {
       children.sort((a, b) => (b.value || 0) - (a.value || 0));
+    }
+
+    // Build argument index by cluster ID for O(1) lookups
+    this.argumentsByClusterId = new Map();
+    for (const arg of this.arguments) {
+      for (const clusterId of (arg.cluster_ids || [])) {
+        if (!this.argumentsByClusterId.has(clusterId)) {
+          this.argumentsByClusterId.set(clusterId, []);
+        }
+        this.argumentsByClusterId.get(clusterId).push(arg);
+      }
     }
 
     // State
@@ -340,7 +357,12 @@ export class ChartManager {
     if (this.chartType === CHART_TYPES.SCATTER) {
       this.scatterChart = new ScatterChart(plotContainer, this.data, {
         selectedClusterId: this.selectedClusterId,
-        targetLevel: 1
+        targetLevel: 1,
+        // Share pre-built indexes
+        clusterById: this.clusterById,
+        childrenByParent: this.childrenByParent,
+        clustersByLevel: this.clustersByLevel,
+        argumentsByClusterId: this.argumentsByClusterId
       });
       this.scatterChart.render();
     } else if (this.chartType === CHART_TYPES.TREEMAP) {
@@ -492,7 +514,12 @@ export class ChartManager {
     if (this.chartType === CHART_TYPES.SCATTER) {
       const chart = new ScatterChart(plotContainer, this.data, {
         selectedClusterId: this.selectedClusterId,
-        targetLevel: 1
+        targetLevel: 1,
+        // Share pre-built indexes
+        clusterById: this.clusterById,
+        childrenByParent: this.childrenByParent,
+        clustersByLevel: this.clustersByLevel,
+        argumentsByClusterId: this.argumentsByClusterId
       });
       chart.render();
     } else if (this.chartType === CHART_TYPES.TREEMAP) {
