@@ -1,0 +1,65 @@
+<% add_decidim_page_title(report.title) %>
+<%= append_javascript_pack_tag "decidim_broadlistening_view" %>
+
+<%= render layout: "layouts/decidim/shared/layout_center", locals: { columns: 10 } do %>
+
+  <section class="layout-main__section layout-main__heading">
+    <div class="flex justify-center">
+      <h1 class="title-decorator my-8"><%= report.title %></h1>
+    </div>
+
+    <div class="text-center text-gray mb-8">
+      <%= t("decidim.broadlistening_view.reports.show.analyzed_comments", count: report.comment_num) %>
+      ·
+      <%= l(report.created_at, format: :long) %>
+    </div>
+  </section>
+
+  <% if report.overview.present? %>
+    <section class="layout-main__section">
+      <h3 class="h4 decorator mb-4"><%= t("decidim.broadlistening_view.reports.show.overview") %></h3>
+      <div class="editor-content">
+        <%= simple_format(report.overview) %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if report.has_data? %>
+    <section class="layout-main__section">
+      <script id="report-data-<%= report.id %>" type="application/json">
+        <%= raw report.result_data.to_json %>
+      </script>
+
+      <div data-broadlistening-view-manager
+           data-data-source="report-data-<%= report.id %>"
+           id="chart-container-<%= report.id %>"
+           class="bg-white rounded-lg border border-gray-3"
+           style="min-height: 600px;">
+      </div>
+    </section>
+
+    <% if report.top_level_clusters.any? %>
+      <section class="layout-main__section">
+        <h3 class="h4 decorator mb-4"><%= t("decidim.broadlistening_view.reports.show.cluster_overview") %></h3>
+
+        <div class="grid gap-4">
+          <% report.top_level_clusters.each_with_index do |cluster, index| %>
+            <div class="card p-4" style="border-left: 4px solid <%= cluster_color(index) %>;">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="inline-block w-4 h-4 rounded-full" style="background-color: <%= cluster_color(index) %>;"></span>
+                <span class="font-semibold"><%= cluster["label"] %></span>
+                <span class="text-sm text-gray ml-auto">
+                  <%= t("decidim.broadlistening_view.reports.show.cluster_count", count: cluster["value"]) %>
+                </span>
+              </div>
+              <% if cluster["takeaway"].present? %>
+                <p class="text-gray-2 text-sm"><%= cluster["takeaway"] %></p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  <% end %>
+
+<% end %>

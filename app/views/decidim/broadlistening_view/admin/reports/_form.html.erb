@@ -1,0 +1,31 @@
+<div class="form__wrapper">
+  <div class="card pt-4">
+    <div class="card-section">
+      <div class="row column">
+        <%= form.text_field :title, autofocus: true %>
+      </div>
+
+      <div class="row column">
+        <%= form.text_area :description, rows: 4 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pt-4 mt-4">
+    <div class="card-section">
+      <h3 class="text-lg font-semibold mb-4"><%= t("data_input", scope: "decidim.broadlistening_view.admin.reports.form") %></h3>
+
+      <div class="row column mb-4">
+        <label><%= t("file_upload", scope: "decidim.broadlistening_view.admin.reports.form") %></label>
+        <%= form.file_field :json_file, accept: ".json,application/json" %>
+        <p class="help-text text-sm text-gray mt-1"><%= t("file_help", scope: "decidim.broadlistening_view.admin.reports.form") %></p>
+      </div>
+
+      <div class="row column">
+        <label><%= t("direct_input", scope: "decidim.broadlistening_view.admin.reports.form") %></label>
+        <%= form.text_area :json_text, rows: 15, placeholder: '{"arguments": [...], "clusters": [...], "overview": "..."}', class: "font-mono text-sm" %>
+        <p class="help-text text-sm text-gray mt-1"><%= t("text_help", scope: "decidim.broadlistening_view.admin.reports.form") %></p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,146 @@
+// Decidim Broadlistening View Styles
+
+.broadlistening-view-chart {
+  width: 100%;
+  min-height: 500px;
+
+  &__plot {
+    width: 100%;
+    height: 500px;
+  }
+}
+
+.broadlistening-view-report {
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  &__meta {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  &__overview {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+.broadlistening-view-clusters {
+  margin-top: 2rem;
+
+  h3 {
+    margin-bottom: 1rem;
+  }
+
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  &__item {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-weight: bold;
+    flex: 1;
+  }
+
+  &__count {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  &__takeaway {
+    color: #444;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// Admin form styles
+.tabs {
+  margin-bottom: 1rem;
+
+  &__nav {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid #ddd;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__link {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+
+    &:hover {
+      color: #333;
+    }
+
+    &.is-active {
+      color: #333;
+      border-bottom-color: #1f77b4;
+    }
+  }
+
+  &__panels {
+    padding-top: 1rem;
+  }
+
+  &__panel {
+    display: none;
+
+    &.is-active {
+      display: block;
+    }
+  }
+}

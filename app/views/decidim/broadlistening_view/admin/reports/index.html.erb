@@ -1,0 +1,55 @@
+<% add_decidim_page_title(t(".title")) %>
+<div class="card">
+  <div class="item_show__header">
+    <h1 class="item_show__header-title">
+      <%= t(".title") %>
+      <%= link_to t(".new_report"), new_report_path, class: "button button__sm button__secondary ml-auto" %>
+    </h1>
+  </div>
+  <% if reports.any? %>
+    <div class="table-stacked">
+      <table class="table-list">
+        <thead>
+          <tr>
+            <th><%= t(".table.title") %></th>
+            <th><%= t(".table.published") %></th>
+            <th><%= t(".table.created_at") %></th>
+            <th><%= t(".table.actions") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.each do |report| %>
+            <tr>
+              <td>
+                <%= link_to report.title, report_path(report) %>
+              </td>
+              <td>
+                <% if report.published? %>
+                  <span class="label bg-success text-white"><%= t(".published") %></span>
+                <% else %>
+                  <span class="label bg-gray text-white"><%= t(".draft") %></span>
+                <% end %>
+              </td>
+              <td><%= l(report.created_at, format: :short) %></td>
+              <td>
+                <%= icon_link_to "pencil-line", edit_report_path(report), t(".edit"), class: "action-icon--edit" %>
+
+                <% if report.published? %>
+                  <%= icon_link_to "close-circle-line", unpublish_report_path(report), t(".unpublish"), method: :post, class: "action-icon--unpublish" %>
+                <% else %>
+                  <%= icon_link_to "check-line", publish_report_path(report), t(".publish"), method: :post, class: "action-icon--publish" %>
+                <% end %>
+
+                <%= icon_link_to "delete-bin-line", report_path(report), t(".delete"), method: :delete, data: { confirm: t(".confirm_delete") }, class: "action-icon--remove" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="p-6">
+      <p class="text-gray"><%= t(".no_reports") %></p>
+    </div>
+  <% end %>
+</div>

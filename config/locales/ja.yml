@@ -1,0 +1,103 @@
+ja:
+  decidim:
+    components:
+      broadlistening_view:
+        name: 広聴分析ビューア
+        settings:
+          global:
+            announcement: アナウンス
+          step:
+            announcement: アナウンス
+    broadlistening_view:
+      name: 広聴分析ビューア
+      admin:
+        reports:
+          index:
+            title: 分析レポート一覧
+            new_report: 新規レポート
+            table:
+              title: タイトル
+              published: 公開状態
+              created_at: 作成日
+              actions: 操作
+            published: 公開中
+            draft: 下書き
+            edit: 編集
+            publish: 公開
+            unpublish: 非公開
+            delete: 削除
+            confirm_delete: このレポートを削除してもよろしいですか？
+            no_reports: レポートはまだありません。
+          show:
+            status: 状態
+            status_published: 公開済み
+            status_draft: 下書き
+            created_at: 作成日
+            description: 説明
+            preview: プレビュー
+            overview: 概要
+            publish: 公開する
+            edit: 編集
+            data_summary: データ概要
+            arguments_count: 意見数
+            clusters_count: クラスター数
+            cluster_list: クラスター一覧
+            cluster_label: ラベル
+            cluster_count: 意見数
+            cluster_takeaway: 要約
+          new:
+            title: 新規レポート作成
+            basic_info: 基本情報
+            data_input: データ入力
+            file_upload: ファイルアップロード
+            direct_input: 直接入力
+            file_help: hierarchical_result.json ファイルをアップロードしてください
+            text_help: JSON形式でデータを直接入力してください
+            create: 作成
+            cancel: キャンセル
+          edit:
+            title: レポート編集
+            basic_info: 基本情報
+            data_input: データ入力
+            file_upload: ファイルアップロード
+            direct_input: 直接入力
+            file_help: 新しいJSONファイルをアップロードするとデータが上書きされます
+            text_help: JSON形式でデータを直接入力してください
+            update: 更新
+            cancel: キャンセル
+          form:
+            data_input: データ入力
+            file_upload: ファイルアップロード
+            direct_input: 直接入力
+            file_help: hierarchical_result.json ファイルをアップロードしてください
+            text_help: JSON形式でデータを直接入力してください
+            invalid_json: JSONの形式が正しくありません
+            missing_keys: "必須キーが不足しています: %{keys}"
+          create:
+            success: レポートを作成しました。
+            error: レポートの作成に失敗しました。
+          update:
+            success: レポートを更新しました。
+            error: レポートの更新に失敗しました。
+          destroy:
+            success: レポートを削除しました。
+          publish:
+            success: レポートを公開しました。
+          unpublish:
+            success: レポートを非公開にしました。
+      reports:
+        index:
+          title: 分析レポート
+          comments_count:
+            one: "%{count}件のコメント"
+            other: "%{count}件のコメント"
+          no_reports: まだレポートはありません。
+        show:
+          analyzed_comments:
+            one: "%{count}件のコメントを分析"
+            other: "%{count}件のコメントを分析"
+          overview: 概要
+          cluster_overview: クラスター概要
+          cluster_count:
+            one: "%{count}件の意見"
+            other: "%{count}件の意見"

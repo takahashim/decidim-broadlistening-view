@@ -1,0 +1,36 @@
+<% add_decidim_page_title(t("decidim.broadlistening_view.reports.index.title")) %>
+
+<% content_for :aside do %>
+  <h1 class="title-decorator"><%= t("decidim.broadlistening_view.reports.index.title") %></h1>
+<% end %>
+
+<%= render layout: "layouts/decidim/shared/layout_two_col" do %>
+
+  <%= render partial: "decidim/shared/component_announcement" %>
+
+  <section id="reports" class="layout-main__section layout-main__heading">
+    <% if @reports.empty? %>
+      <%= cell("decidim/announcement", t("decidim.broadlistening_view.reports.index.no_reports")) %>
+    <% else %>
+      <h2 class="h5 md:h3 decorator"><%= t("decidim.broadlistening_view.reports.index.title") %></h2>
+
+      <div class="grid md:grid-cols-2 gap-4 mt-6">
+        <% @reports.each do |report| %>
+          <%= link_to report_path(report), class: "card card--action hover:no-underline" do %>
+            <div class="card__content p-4">
+              <h3 class="card__title h5 mb-2"><%= report.title %></h3>
+              <% if report.description.present? %>
+                <p class="card__text text-gray-2 mb-4"><%= truncate(report.description, length: 150) %></p>
+              <% end %>
+              <div class="flex gap-4 text-sm text-gray">
+                <span><%= t("decidim.broadlistening_view.reports.index.comments_count", count: report.comment_num) %></span>
+                <span><%= l(report.created_at, format: :short) %></span>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+<% end %>
