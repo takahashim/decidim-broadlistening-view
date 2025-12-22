@@ -42,10 +42,10 @@
     </section>
 
     <% if report.top_level_clusters.any? %>
-      <section class="layout-main__section">
+      <section class="layout-main__section" id="cluster-overview-section">
         <h3 class="h4 decorator mb-4"><%= t("decidim.broadlistening_view.reports.show.cluster_overview") %></h3>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="cluster-grid">
           <% report.top_level_clusters.each_with_index do |cluster, index| %>
             <div class="card p-4 hover:shadow-md transition-shadow cursor-pointer"
                  style="border-left: 4px solid <%= cluster_color(index) %>;"

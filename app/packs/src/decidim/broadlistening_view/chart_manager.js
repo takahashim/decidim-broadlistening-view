@@ -52,6 +52,7 @@ export class ChartManager {
     this.breadcrumbContainer = null;
     this.chartContainer = null;
     this.fullscreenModal = null;
+    this.clusterGridContainer = null;
 
     this.init();
   }
@@ -64,6 +65,11 @@ export class ChartManager {
 
     this.createLayout();
     this.renderChart();
+
+    // Find and store reference to cluster grid and section
+    this.clusterGridContainer = document.getElementById("cluster-grid");
+    this.clusterOverviewSection = document.getElementById("cluster-overview-section");
+
     this.bindClusterCardEvents();
   }
 
@@ -196,18 +202,110 @@ export class ChartManager {
     // Reset cluster selection when switching chart types
     if (type === CHART_TYPES.TREEMAP) {
       this.selectedClusterId = null;
+      this.renderClusterGrid(); // Reset to top level
     }
     this.updateToolbarState();
     this.renderBreadcrumb();
     this.renderChart();
-    this.updateClusterCardHighlights();
   }
 
   navigateToCluster(clusterId) {
     this.selectedClusterId = clusterId;
     this.renderBreadcrumb();
     this.renderChart();
-    this.updateClusterCardHighlights();
+    this.renderClusterGrid();
+  }
+
+  /**
+   * Render cluster grid based on current selection
+   */
+  renderClusterGrid() {
+    if (!this.clusterGridContainer) return;
+
+    // Get clusters to display
+    let clustersToShow;
+    if (this.selectedClusterId) {
+      clustersToShow = this.getChildClusters(this.selectedClusterId);
+    } else {
+      clustersToShow = this.getTopLevelClusters();
+    }
+
+    // Render cluster cards
+    this.clusterGridContainer.innerHTML = clustersToShow.map((cluster, index) => {
+      const color = CLUSTER_COLORS[index % CLUSTER_COLORS.length];
+      const hasChildren = this.getChildClusters(cluster.id).length > 0;
+      const cursorClass = hasChildren ? "cursor-pointer" : "";
+      const title = hasChildren ? 'title="クリックしてサブクラスターを表示"' : "";
+
+      return `
+        <div class="card p-4 hover:shadow-md transition-shadow ${cursorClass}"
+             style="border-left: 4px solid ${color};"
+             data-cluster-id="${cluster.id}"
+             ${title}>
+          <div class="flex items-center gap-3 mb-2">
+            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color};"></span>
+            <span class="font-semibold text-sm line-clamp-2">${cluster.label || ""}</span>
+          </div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${color}20; color: ${color};">
+              ${cluster.value || 0}件の意見
+            </span>
+          </div>
+          ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${cluster.takeaway}</p>` : ""}
+        </div>
+      `;
+    }).join("");
+
+    // Render cluster grid breadcrumb
+    this.renderClusterGridBreadcrumb();
+
+    // Rebind click events
+    this.bindClusterCardEvents();
+  }
+
+  /**
+   * Render breadcrumb navigation for cluster grid section
+   */
+  renderClusterGridBreadcrumb() {
+    if (!this.clusterOverviewSection) return;
+
+    // Remove existing breadcrumb if any
+    const existingBreadcrumb = this.clusterOverviewSection.querySelector(".blv-cluster-breadcrumb");
+    if (existingBreadcrumb) {
+      existingBreadcrumb.remove();
+    }
+
+    // Don't show breadcrumb if at top level
+    if (!this.selectedClusterId) return;
+
+    const path = this.buildClusterPath(this.selectedClusterId);
+    if (path.length === 0) return;
+
+    // Create breadcrumb element
+    const breadcrumbEl = document.createElement("div");
+    breadcrumbEl.className = "blv-cluster-breadcrumb";
+    breadcrumbEl.innerHTML = `
+      <nav class="blv-cluster-breadcrumb__nav">
+        <button class="blv-cluster-breadcrumb__btn" data-navigate-cluster="">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          全てのクラスターに戻る
+        </button>
+        <span class="blv-cluster-breadcrumb__current">
+          ${path.map(c => c.label).join(" > ")}
+        </span>
+      </nav>
+    `;
+
+    // Insert before the grid
+    this.clusterGridContainer.parentNode.insertBefore(breadcrumbEl, this.clusterGridContainer);
+
+    // Bind click event
+    breadcrumbEl.querySelector("[data-navigate-cluster]").addEventListener("click", (e) => {
+      e.preventDefault();
+      this.navigateToCluster(null);
+      // Also update the chart breadcrumb
+      this.renderBreadcrumb();
+    });
   }
 
   renderChart() {
@@ -367,7 +465,7 @@ export class ChartManager {
         this.selectedClusterId = clusterId || null;
         this.renderFullscreenBreadcrumb();
         this.renderFullscreenChart();
-        this.updateClusterCardHighlights();
+        this.renderClusterGrid(); // Also update main page cluster grid
       });
     });
   }
@@ -414,6 +512,7 @@ export class ChartManager {
     this.updateToolbarState();
     this.renderBreadcrumb();
     this.renderChart();
+    this.renderClusterGrid();
   }
 
   /**
@@ -423,14 +522,20 @@ export class ChartManager {
     // Find cluster cards in the page and bind click events
     const clusterCards = document.querySelectorAll("[data-cluster-id]");
     clusterCards.forEach(card => {
-      card.style.cursor = "pointer";
-      card.addEventListener("click", (e) => {
-        e.preventDefault();
-        const clusterId = card.dataset.clusterId;
-        if (clusterId) {
-          this.handleClusterCardClick(clusterId);
-        }
-      });
+      const clusterId = card.dataset.clusterId;
+      const hasChildren = this.getChildClusters(clusterId).length > 0;
+
+      if (hasChildren) {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (clusterId) {
+            this.handleClusterCardClick(clusterId);
+          }
+        });
+      } else {
+        card.style.cursor = "default";
+      }
     });
   }
 
