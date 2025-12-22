@@ -40,6 +40,8 @@ export class ScatterChart {
       targetLevel: 1,
       selectedClusterId: null,
       filteredArgumentIds: null,
+      filteredClusterIds: null, // Set of cluster IDs to show in density mode
+      maxLevel: null, // Max level for density mode
       ...options
     };
 
@@ -158,7 +160,7 @@ export class ScatterChart {
   }
 
   getPointColors() {
-    const { targetLevel, selectedClusterId, filteredArgumentIds } = this.options;
+    const { targetLevel, selectedClusterId, filteredArgumentIds, filteredClusterIds, maxLevel } = this.options;
 
     // Pre-compute child cluster IDs for selected cluster (if any)
     let childIds = null;
@@ -174,6 +176,15 @@ export class ScatterChart {
       }
 
       const clusterIds = arg.cluster_ids || [];
+
+      // Density mode: color by maxLevel cluster, filter by filteredClusterIds
+      if (filteredClusterIds && maxLevel !== null) {
+        const deepestClusterId = this.getClusterIdAtLevel(clusterIds, maxLevel);
+        if (!deepestClusterId || !filteredClusterIds.has(deepestClusterId)) {
+          return INACTIVE_COLOR;
+        }
+        return getClusterColor(deepestClusterId);
+      }
 
       // If a cluster is selected, show children of that cluster
       if (selectedClusterId && childIds) {
@@ -209,11 +220,15 @@ export class ScatterChart {
   }
 
   getClusterAnnotations() {
-    const { targetLevel, selectedClusterId } = this.options;
+    const { targetLevel, selectedClusterId, filteredClusterIds, maxLevel } = this.options;
 
     let clustersToShow;
 
-    if (selectedClusterId) {
+    if (filteredClusterIds && maxLevel !== null) {
+      // Density mode: show only filtered clusters at maxLevel
+      const maxLevelClusters = this.clustersByLevel.get(maxLevel) || [];
+      clustersToShow = maxLevelClusters.filter(c => filteredClusterIds.has(c.id));
+    } else if (selectedClusterId) {
       // Show children of selected cluster
       clustersToShow = this.childrenByParent.get(selectedClusterId) || [];
     } else {
@@ -259,24 +274,38 @@ export class ScatterChart {
     lines.push(wrapped);
 
     // Add cluster info based on current view
-    const { selectedClusterId, targetLevel } = this.options;
+    const { selectedClusterId, targetLevel, filteredClusterIds, maxLevel } = this.options;
 
-    if (selectedClusterId) {
+    if (filteredClusterIds && maxLevel !== null) {
+      // Density mode: show maxLevel cluster label
+      const clusterId = this.getClusterIdAtLevel(argument.cluster_ids || [], maxLevel);
+      if (clusterId) {
+        const cluster = this.clusterById.get(clusterId);
+        if (cluster) {
+          lines.push(`<b>[${cluster.label}]</b>`);
+        }
+      }
+    } else if (selectedClusterId) {
       // Show child cluster label
       const childClusters = this.childrenByParent.get(selectedClusterId) || [];
       const childIds = new Set(childClusters.map(c => c.id));
-      const childId = argument.cluster_ids.find(id => childIds.has(id));
+      const clusterIds = argument.cluster_ids || [];
+      const childId = clusterIds.find(id => childIds.has(id));
       if (childId) {
         const cluster = this.clusterById.get(childId);
         if (cluster) {
           lines.push(`<b>[${cluster.label}]</b>`);
         }
       }
-    } else if (argument.cluster_ids && argument.cluster_ids.length > targetLevel) {
-      const clusterId = this.getClusterIdAtLevel(argument.cluster_ids, targetLevel);
-      const cluster = this.clusterById.get(clusterId);
-      if (cluster) {
-        lines.push(`<b>[${cluster.label}]</b>`);
+    } else {
+      // Default: show target level cluster label
+      const clusterIds = argument.cluster_ids || [];
+      const clusterId = this.getClusterIdAtLevel(clusterIds, targetLevel);
+      if (clusterId) {
+        const cluster = this.clusterById.get(clusterId);
+        if (cluster) {
+          lines.push(`<b>[${cluster.label}]</b>`);
+        }
       }
     }
 

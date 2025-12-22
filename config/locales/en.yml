@@ -102,3 +102,15 @@ en:
             one: "%{count} opinion"
             other: "%{count} opinions"
           chart_help: Drag to pan, scroll to zoom. Click on a cluster in the treemap to see details.
+          views:
+            all: All
+            dense: Dense Opinions
+            tree: Tree
+          settings:
+            title: Display Settings
+            density: Top percentile to show
+            min_value: Minimum opinions
+            density_hint: Lower values show only denser opinions
+            min_value_hint: Show groups with at least this many opinions
+            close: Close
+          dense_not_available: Dense opinion data not available

@@ -102,3 +102,15 @@ ja:
             one: "%{count}件の意見"
             other: "%{count}件の意見"
           chart_help: ドラッグで移動、スクロールでズームできます。ツリーマップではクラスタをクリックして詳細を確認できます。
+          views:
+            all: 全体
+            dense: 濃い意見
+            tree: ツリー
+          settings:
+            title: 表示設定
+            density: 上位何%を表示
+            min_value: 最小意見数
+            density_hint: 値が小さいほど濃い意見のみを表示します
+            min_value_hint: 指定件数以上の意見を持つグループを表示します
+            close: 閉じる
+          dense_not_available: 濃い意見データがありません

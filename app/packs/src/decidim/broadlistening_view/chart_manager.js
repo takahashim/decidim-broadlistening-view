@@ -4,17 +4,21 @@
 import { ScatterChart } from "./scatter_chart.js";
 import { TreemapChart } from "./treemap_chart.js";
 import { CLUSTER_COLORS } from "./colors.js";
+import { escapeHtml } from "src/decidim/utilities/text";
 
-// Chart type constants
-const CHART_TYPES = {
-  SCATTER: "scatter",
+// View mode constants
+const VIEW_MODES = {
+  SCATTER_ALL: "scatterAll",
+  SCATTER_DENSITY: "scatterDensity",
   TREEMAP: "treemap"
 };
 
 // SVG Icons
 const ICONS = {
   scatter: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="7.5" r="2.5"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+  dense: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="9"/></svg>`,
   treemap: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
+  settings: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>`,
   fullscreen: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`,
   close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
   chevronRight: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`
@@ -25,7 +29,7 @@ export class ChartManager {
     this.container = container;
     this.data = data;
     this.options = {
-      defaultChart: CHART_TYPES.SCATTER,
+      defaultChart: VIEW_MODES.SCATTER_ALL,
       showToolbar: true,
       ...options
     };
@@ -67,11 +71,28 @@ export class ChartManager {
       }
     }
 
+    // Calculate max level
+    this.maxLevel = Math.max(...this.clusters.map(c => c.level || 0), 0);
+
+    // Check if density filter is available (clusters have density_rank_percentile)
+    this.hasDensityData = this.clusters.some(c => typeof c.density_rank_percentile === "number");
+
     // State
-    this.chartType = this.options.defaultChart;
+    this.viewMode = VIEW_MODES.SCATTER_ALL;
     this.isFullscreen = false;
     this.selectedClusterId = null;
     this.treemapLevel = "0";
+
+    // Density filter settings
+    this.maxDensity = 0.2; // Top 20% by default
+    this.minValue = 5;     // Minimum 5 opinions by default
+    this.isDenseGroupEnabled = true;
+    this.settingsDialogOpen = false;
+
+    // Calculate initial dense group availability
+    if (this.hasDensityData) {
+      this.updateDenseGroupEnabled();
+    }
 
     // Chart instances
     this.scatterChart = null;
@@ -122,22 +143,41 @@ export class ChartManager {
   }
 
   renderToolbar() {
+    const densityBtnDisabled = !this.hasDensityData || !this.isDenseGroupEnabled;
+    const densityBtnTitle = densityBtnDisabled
+      ? "この設定条件では抽出できませんでした"
+      : "濃い意見";
+
     this.toolbarContainer.innerHTML = `
-      <div class="blv-toolbar__buttons">
-        <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.SCATTER ? 'blv-toolbar__btn--active' : ''}"
-                data-chart-type="${CHART_TYPES.SCATTER}"
-                title="散布図">
+      <div class="blv-toolbar__segment">
+        <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_ALL ? 'blv-toolbar__segment-btn--active' : ''}"
+                data-view-mode="${VIEW_MODES.SCATTER_ALL}"
+                title="全体">
           ${ICONS.scatter}
-          <span>散布図</span>
+          <span>全体</span>
         </button>
-        <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.TREEMAP ? 'blv-toolbar__btn--active' : ''}"
-                data-chart-type="${CHART_TYPES.TREEMAP}"
+        <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_DENSITY ? 'blv-toolbar__segment-btn--active' : ''}"
+                data-view-mode="${VIEW_MODES.SCATTER_DENSITY}"
+                title="${densityBtnTitle}"
+                ${densityBtnDisabled ? 'disabled' : ''}>
+          ${ICONS.dense}
+          <span>濃い意見</span>
+        </button>
+        <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.TREEMAP ? 'blv-toolbar__segment-btn--active' : ''}"
+                data-view-mode="${VIEW_MODES.TREEMAP}"
                 title="ツリーマップ">
           ${ICONS.treemap}
           <span>ツリー</span>
         </button>
       </div>
       <div class="blv-toolbar__actions">
+        ${this.hasDensityData ? `
+        <button class="blv-toolbar__btn blv-toolbar__btn--icon"
+                data-action="settings"
+                title="表示設定">
+          ${ICONS.settings}
+        </button>
+        ` : ''}
         <button class="blv-toolbar__btn blv-toolbar__btn--icon"
                 data-action="fullscreen"
                 title="フルスクリーン">
@@ -146,13 +186,22 @@ export class ChartManager {
       </div>
     `;
 
-    // Add event listeners
-    this.toolbarContainer.querySelectorAll("[data-chart-type]").forEach(btn => {
+    // Add event listeners for view mode buttons
+    this.toolbarContainer.querySelectorAll("[data-view-mode]").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const type = e.currentTarget.dataset.chartType;
-        this.switchChart(type);
+        if (e.currentTarget.disabled) return;
+        const mode = e.currentTarget.dataset.viewMode;
+        this.switchViewMode(mode);
       });
     });
+
+    // Add event listener for settings button
+    const settingsBtn = this.toolbarContainer.querySelector("[data-action='settings']");
+    if (settingsBtn) {
+      settingsBtn.addEventListener("click", () => {
+        this.openSettingsDialog();
+      });
+    }
 
     this.toolbarContainer.querySelector("[data-action='fullscreen']").addEventListener("click", () => {
       this.toggleFullscreen();
@@ -160,7 +209,8 @@ export class ChartManager {
   }
 
   renderBreadcrumb() {
-    if (!this.selectedClusterId || this.chartType !== CHART_TYPES.SCATTER) {
+    const isScatterMode = this.viewMode === VIEW_MODES.SCATTER_ALL || this.viewMode === VIEW_MODES.SCATTER_DENSITY;
+    if (!this.selectedClusterId || !isScatterMode) {
       this.breadcrumbContainer.innerHTML = "";
       this.breadcrumbContainer.style.display = "none";
       return;
@@ -184,8 +234,8 @@ export class ChartManager {
           ${path.map((cluster, index) => `
             <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
             ${index === path.length - 1
-              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${cluster.label}</span>`
-              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${cluster.label}</button>`
+              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
             }
           `).join("")}
         </nav>
@@ -219,18 +269,25 @@ export class ChartManager {
   }
 
   updateToolbarState() {
-    this.toolbarContainer.querySelectorAll("[data-chart-type]").forEach(btn => {
-      const isActive = btn.dataset.chartType === this.chartType;
-      btn.classList.toggle("blv-toolbar__btn--active", isActive);
+    this.toolbarContainer.querySelectorAll("[data-view-mode]").forEach(btn => {
+      const isActive = btn.dataset.viewMode === this.viewMode;
+      btn.classList.toggle("blv-toolbar__segment-btn--active", isActive);
+
+      // Update density button disabled state
+      if (btn.dataset.viewMode === VIEW_MODES.SCATTER_DENSITY) {
+        const isDisabled = !this.hasDensityData || !this.isDenseGroupEnabled;
+        btn.disabled = isDisabled;
+        btn.title = isDisabled ? "この設定条件では抽出できませんでした" : "濃い意見";
+      }
     });
   }
 
-  switchChart(type) {
-    if (this.chartType === type) return;
+  switchViewMode(mode) {
+    if (this.viewMode === mode) return;
 
-    this.chartType = type;
-    // Reset cluster selection when switching chart types
-    if (type === CHART_TYPES.TREEMAP) {
+    this.viewMode = mode;
+    // Reset cluster selection when switching to treemap
+    if (mode === VIEW_MODES.TREEMAP) {
       this.selectedClusterId = null;
       this.renderClusterGrid(); // Reset to top level
     }
@@ -274,14 +331,14 @@ export class ChartManager {
              ${title}>
           <div class="flex items-center gap-3 mb-2">
             <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color};"></span>
-            <span class="font-semibold text-sm line-clamp-2">${cluster.label || ""}</span>
+            <span class="font-semibold text-sm line-clamp-2">${escapeHtml(cluster.label)}</span>
           </div>
           <div class="flex items-center gap-2 mb-2">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${color}20; color: ${color};">
               ${cluster.value || 0}件の意見
             </span>
           </div>
-          ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${cluster.takeaway}</p>` : ""}
+          ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${escapeHtml(cluster.takeaway)}</p>` : ""}
         </div>
       `;
     }).join("");
@@ -321,7 +378,7 @@ export class ChartManager {
           全てのクラスターに戻る
         </button>
         <span class="blv-cluster-breadcrumb__current">
-          ${path.map(c => c.label).join(" > ")}
+          ${path.map(c => escapeHtml(c.label)).join(" > ")}
         </span>
       </nav>
     `;
@@ -353,8 +410,8 @@ export class ChartManager {
     this.chartContainer.innerHTML = '<div class="blv-chart-plot"></div>';
     const plotContainer = this.chartContainer.querySelector(".blv-chart-plot");
 
-    // Render the appropriate chart
-    if (this.chartType === CHART_TYPES.SCATTER) {
+    // Render the appropriate chart based on view mode
+    if (this.viewMode === VIEW_MODES.SCATTER_ALL) {
       this.scatterChart = new ScatterChart(plotContainer, this.data, {
         selectedClusterId: this.selectedClusterId,
         targetLevel: 1,
@@ -365,7 +422,23 @@ export class ChartManager {
         argumentsByClusterId: this.argumentsByClusterId
       });
       this.scatterChart.render();
-    } else if (this.chartType === CHART_TYPES.TREEMAP) {
+    } else if (this.viewMode === VIEW_MODES.SCATTER_DENSITY) {
+      // Get density-filtered clusters
+      const { filteredClusterIds } = this.getDenseClusters();
+
+      this.scatterChart = new ScatterChart(plotContainer, this.data, {
+        selectedClusterId: null, // No subcluster navigation in density view
+        targetLevel: this.maxLevel,
+        filteredClusterIds: filteredClusterIds,
+        maxLevel: this.maxLevel,
+        // Share pre-built indexes
+        clusterById: this.clusterById,
+        childrenByParent: this.childrenByParent,
+        clustersByLevel: this.clustersByLevel,
+        argumentsByClusterId: this.argumentsByClusterId
+      });
+      this.scatterChart.render();
+    } else if (this.viewMode === VIEW_MODES.TREEMAP) {
       this.treemapChart = new TreemapChart(plotContainer, this.data, {
         level: this.treemapLevel,
         onLevelChange: (level) => {
@@ -387,20 +460,32 @@ export class ChartManager {
   enterFullscreen() {
     this.isFullscreen = true;
 
+    const densityBtnDisabled = !this.hasDensityData || !this.isDenseGroupEnabled;
+    const densityBtnTitle = densityBtnDisabled
+      ? "この設定条件では抽出できませんでした"
+      : "濃い意見";
+
     // Create fullscreen modal
     this.fullscreenModal = document.createElement("div");
     this.fullscreenModal.className = "blv-fullscreen-modal";
     this.fullscreenModal.innerHTML = `
       <div class="blv-fullscreen-modal__header">
-        <div class="blv-toolbar__buttons">
-          <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.SCATTER ? 'blv-toolbar__btn--active' : ''}"
-                  data-chart-type="${CHART_TYPES.SCATTER}"
-                  title="散布図">
+        <div class="blv-toolbar__segment">
+          <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_ALL ? 'blv-toolbar__segment-btn--active' : ''}"
+                  data-view-mode="${VIEW_MODES.SCATTER_ALL}"
+                  title="全体">
             ${ICONS.scatter}
-            <span>散布図</span>
+            <span>全体</span>
           </button>
-          <button class="blv-toolbar__btn ${this.chartType === CHART_TYPES.TREEMAP ? 'blv-toolbar__btn--active' : ''}"
-                  data-chart-type="${CHART_TYPES.TREEMAP}"
+          <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_DENSITY ? 'blv-toolbar__segment-btn--active' : ''}"
+                  data-view-mode="${VIEW_MODES.SCATTER_DENSITY}"
+                  title="${densityBtnTitle}"
+                  ${densityBtnDisabled ? 'disabled' : ''}>
+            ${ICONS.dense}
+            <span>濃い意見</span>
+          </button>
+          <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.TREEMAP ? 'blv-toolbar__segment-btn--active' : ''}"
+                  data-view-mode="${VIEW_MODES.TREEMAP}"
                   title="ツリーマップ">
             ${ICONS.treemap}
             <span>ツリー</span>
@@ -419,12 +504,13 @@ export class ChartManager {
     document.body.appendChild(this.fullscreenModal);
     document.body.style.overflow = "hidden";
 
-    // Add event listeners
-    this.fullscreenModal.querySelectorAll("[data-chart-type]").forEach(btn => {
+    // Add event listeners for view mode buttons
+    this.fullscreenModal.querySelectorAll("[data-view-mode]").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const type = e.currentTarget.dataset.chartType;
-        this.chartType = type;
-        if (type === CHART_TYPES.TREEMAP) {
+        if (e.currentTarget.disabled) return;
+        const mode = e.currentTarget.dataset.viewMode;
+        this.viewMode = mode;
+        if (mode === VIEW_MODES.TREEMAP) {
           this.selectedClusterId = null;
         }
         this.updateFullscreenToolbar();
@@ -453,9 +539,16 @@ export class ChartManager {
   updateFullscreenToolbar() {
     if (!this.fullscreenModal) return;
 
-    this.fullscreenModal.querySelectorAll("[data-chart-type]").forEach(btn => {
-      const isActive = btn.dataset.chartType === this.chartType;
-      btn.classList.toggle("blv-toolbar__btn--active", isActive);
+    this.fullscreenModal.querySelectorAll("[data-view-mode]").forEach(btn => {
+      const isActive = btn.dataset.viewMode === this.viewMode;
+      btn.classList.toggle("blv-toolbar__segment-btn--active", isActive);
+
+      // Update density button disabled state
+      if (btn.dataset.viewMode === VIEW_MODES.SCATTER_DENSITY) {
+        const isDisabled = !this.hasDensityData || !this.isDenseGroupEnabled;
+        btn.disabled = isDisabled;
+        btn.title = isDisabled ? "この設定条件では抽出できませんでした" : "濃い意見";
+      }
     });
   }
 
@@ -463,8 +556,9 @@ export class ChartManager {
     if (!this.fullscreenModal) return;
 
     const breadcrumbContainer = this.fullscreenModal.querySelector(".blv-fullscreen-modal__breadcrumb");
+    const isScatterAllMode = this.viewMode === VIEW_MODES.SCATTER_ALL;
 
-    if (!this.selectedClusterId || this.chartType !== CHART_TYPES.SCATTER) {
+    if (!this.selectedClusterId || !isScatterAllMode) {
       breadcrumbContainer.innerHTML = "";
       return;
     }
@@ -485,8 +579,8 @@ export class ChartManager {
           ${path.map((cluster, index) => `
             <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
             ${index === path.length - 1
-              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${cluster.label}</span>`
-              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${cluster.label}</button>`
+              ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
             }
           `).join("")}
         </nav>
@@ -511,7 +605,7 @@ export class ChartManager {
     const plotContainer = this.fullscreenModal.querySelector(".blv-chart-plot");
     plotContainer.innerHTML = "";
 
-    if (this.chartType === CHART_TYPES.SCATTER) {
+    if (this.viewMode === VIEW_MODES.SCATTER_ALL) {
       const chart = new ScatterChart(plotContainer, this.data, {
         selectedClusterId: this.selectedClusterId,
         targetLevel: 1,
@@ -522,7 +616,21 @@ export class ChartManager {
         argumentsByClusterId: this.argumentsByClusterId
       });
       chart.render();
-    } else if (this.chartType === CHART_TYPES.TREEMAP) {
+    } else if (this.viewMode === VIEW_MODES.SCATTER_DENSITY) {
+      const { filteredClusterIds } = this.getDenseClusters();
+      const chart = new ScatterChart(plotContainer, this.data, {
+        selectedClusterId: null,
+        targetLevel: this.maxLevel,
+        filteredClusterIds: filteredClusterIds,
+        maxLevel: this.maxLevel,
+        // Share pre-built indexes
+        clusterById: this.clusterById,
+        childrenByParent: this.childrenByParent,
+        clustersByLevel: this.clustersByLevel,
+        argumentsByClusterId: this.argumentsByClusterId
+      });
+      chart.render();
+    } else if (this.viewMode === VIEW_MODES.TREEMAP) {
       const chart = new TreemapChart(plotContainer, this.data, {
         level: this.treemapLevel,
         onLevelChange: (level) => {
@@ -590,9 +698,9 @@ export class ChartManager {
     const children = this.getChildClusters(clusterId);
 
     if (children.length > 0) {
-      // Switch to scatter if not already
-      if (this.chartType !== CHART_TYPES.SCATTER) {
-        this.chartType = CHART_TYPES.SCATTER;
+      // Switch to scatter all mode if not already in a scatter mode
+      if (this.viewMode === VIEW_MODES.TREEMAP) {
+        this.viewMode = VIEW_MODES.SCATTER_ALL;
         this.updateToolbarState();
       }
       this.navigateToCluster(clusterId);
@@ -615,5 +723,174 @@ export class ChartManager {
   getTopLevelClusters() {
     // Root cluster "0" has level 1 children
     return this.childrenByParent.get("0") || [];
+  }
+
+  /**
+   * Get density-filtered clusters
+   * @returns {Object} { filtered: Cluster[], filteredClusterIds: Set, isEmpty: boolean }
+   */
+  getDenseClusters() {
+    if (!this.hasDensityData) {
+      return { filtered: [], filteredClusterIds: new Set(), isEmpty: true };
+    }
+
+    const deepestLevelClusters = this.clustersByLevel.get(this.maxLevel) || [];
+    const filteredDeepestLevelClusters = deepestLevelClusters
+      .filter(c => c.density_rank_percentile <= this.maxDensity)
+      .filter(c => (c.value || 0) >= this.minValue);
+
+    const filteredClusterIds = new Set(filteredDeepestLevelClusters.map(c => c.id));
+
+    // Include non-deepest level clusters
+    const filtered = [
+      ...this.clusters.filter(c => c.level !== this.maxLevel),
+      ...filteredDeepestLevelClusters
+    ];
+
+    return {
+      filtered,
+      filteredClusterIds,
+      isEmpty: filteredDeepestLevelClusters.length === 0
+    };
+  }
+
+  /**
+   * Update whether density group button should be enabled
+   */
+  updateDenseGroupEnabled() {
+    const { isEmpty } = this.getDenseClusters();
+    this.isDenseGroupEnabled = !isEmpty;
+
+    // If currently in density mode but no clusters available, switch to all mode
+    if (this.viewMode === VIEW_MODES.SCATTER_DENSITY && isEmpty) {
+      this.viewMode = VIEW_MODES.SCATTER_ALL;
+    }
+  }
+
+  /**
+   * Open settings dialog
+   */
+  openSettingsDialog() {
+    if (this.settingsDialogOpen) return;
+    this.settingsDialogOpen = true;
+
+    // Create settings dialog
+    this.settingsDialog = document.createElement("div");
+    this.settingsDialog.className = "blv-settings-dialog";
+    this.settingsDialog.innerHTML = `
+      <div class="blv-settings-dialog__overlay"></div>
+      <div class="blv-settings-dialog__content">
+        <div class="blv-settings-dialog__header">
+          <h3>表示設定</h3>
+          <button class="blv-settings-dialog__close" data-action="close">
+            ${ICONS.close}
+          </button>
+        </div>
+        <div class="blv-settings-dialog__body">
+          <div class="blv-settings-dialog__field">
+            <label>上位何%の意見グループを表示するか</label>
+            <div class="blv-slider">
+              <input type="range" min="0.1" max="1" step="0.1" value="${this.maxDensity}"
+                     data-setting="maxDensity" />
+              <div class="blv-slider__labels">
+                <span>10%</span>
+                <span class="blv-slider__value">${Math.round(this.maxDensity * 100)}%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+          <div class="blv-settings-dialog__field">
+            <label>意見グループのサンプル数の最小数</label>
+            <div class="blv-slider">
+              <input type="range" min="0" max="10" step="1" value="${this.minValue}"
+                     data-setting="minValue" />
+              <div class="blv-slider__labels">
+                <span>0</span>
+                <span class="blv-slider__value">${this.minValue}件</span>
+                <span>10</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="blv-settings-dialog__footer">
+          <button class="button button__sm" data-action="apply">適用</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(this.settingsDialog);
+
+    // Bind event listeners
+    this.settingsDialog.querySelector("[data-action='close']").addEventListener("click", () => {
+      this.closeSettingsDialog();
+    });
+
+    this.settingsDialog.querySelector(".blv-settings-dialog__overlay").addEventListener("click", () => {
+      this.closeSettingsDialog();
+    });
+
+    // Update value display on slider change
+    this.settingsDialog.querySelectorAll("input[type='range']").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const value = parseFloat(e.target.value);
+        const valueDisplay = e.target.parentElement.querySelector(".blv-slider__value");
+        if (e.target.dataset.setting === "maxDensity") {
+          valueDisplay.textContent = `${Math.round(value * 100)}%`;
+        } else {
+          valueDisplay.textContent = `${value}件`;
+        }
+      });
+    });
+
+    // Apply button
+    this.settingsDialog.querySelector("[data-action='apply']").addEventListener("click", () => {
+      const maxDensityInput = this.settingsDialog.querySelector("[data-setting='maxDensity']");
+      const minValueInput = this.settingsDialog.querySelector("[data-setting='minValue']");
+
+      this.maxDensity = parseFloat(maxDensityInput.value);
+      this.minValue = parseInt(minValueInput.value, 10);
+
+      this.updateDenseGroupEnabled();
+      this.updateToolbarState();
+      if (this.isFullscreen) {
+        this.updateFullscreenToolbar();
+      }
+
+      // Re-render if in density mode
+      if (this.viewMode === VIEW_MODES.SCATTER_DENSITY) {
+        this.renderChart();
+        if (this.isFullscreen) {
+          this.renderFullscreenChart();
+        }
+      }
+
+      this.closeSettingsDialog();
+    });
+
+    // Handle escape key
+    this._settingsEscapeHandler = (e) => {
+      if (e.key === "Escape") {
+        this.closeSettingsDialog();
+      }
+    };
+    document.addEventListener("keydown", this._settingsEscapeHandler);
+  }
+
+  /**
+   * Close settings dialog
+   */
+  closeSettingsDialog() {
+    if (!this.settingsDialogOpen) return;
+    this.settingsDialogOpen = false;
+
+    if (this.settingsDialog) {
+      document.body.removeChild(this.settingsDialog);
+      this.settingsDialog = null;
+    }
+
+    if (this._settingsEscapeHandler) {
+      document.removeEventListener("keydown", this._settingsEscapeHandler);
+      this._settingsEscapeHandler = null;
+    }
   }
 }
