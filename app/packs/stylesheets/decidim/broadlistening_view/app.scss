@@ -501,24 +501,24 @@
 
 // Settings dialog
 .blv-settings-dialog {
+  // Hidden by default, shown by a11y-dialog-component
+  display: none;
+
+  // Backdrop (the container itself acts as backdrop)
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  background: rgba(0, 0, 0, 0.4);
 
-  &__overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
+  // When dialog is open
+  &[aria-hidden="false"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
   }
 
   &__content {
@@ -531,22 +531,20 @@
     overflow: hidden;
   }
 
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  &__title {
+    margin: 0;
     padding: 1rem 1.25rem;
+    padding-right: 3rem; // Space for close button
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
     border-bottom: 1px solid #e5e7eb;
-
-    h3 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #111827;
-    }
   }
 
   &__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -563,6 +561,11 @@
     &:hover {
       background: #f3f4f6;
       color: #111827;
+    }
+
+    &:focus {
+      outline: 2px solid #0284c7;
+      outline-offset: 2px;
     }
 
     svg {
@@ -596,6 +599,7 @@
     border-top: 1px solid #e5e7eb;
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
   }
 }
 
