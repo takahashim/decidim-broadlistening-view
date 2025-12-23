@@ -11,7 +11,7 @@ export const VIEW_MODES = {
 /**
  * Toolbar component for view mode switching and actions
  */
-export class Toolbar {
+export default class Toolbar {
   /**
    * @param {Object} options
    * @param {string} options.viewMode - Current view mode

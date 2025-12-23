@@ -26,7 +26,7 @@ function wrapText(text, maxChars) {
   return text.replace(new RegExp(`(.{${maxChars}})`, 'g'), '$1<br />');
 }
 
-export class TreemapChart {
+export default class TreemapChart {
   constructor(container, data, options = {}) {
     this.container = container;
     this.arguments = data.arguments || [];

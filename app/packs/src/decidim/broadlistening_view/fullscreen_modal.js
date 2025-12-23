@@ -1,11 +1,11 @@
 // Fullscreen Modal component for Broadlistening visualization
 import icon from "src/decidim/icon";
-import { Toolbar, VIEW_MODES } from "./toolbar.js";
+import Toolbar, { VIEW_MODES } from "./toolbar";
 
 /**
  * Fullscreen modal for chart visualization
  */
-export class FullscreenModal {
+export default class FullscreenModal {
   /**
    * @param {Object} options
    * @param {string} options.viewMode - Current view mode

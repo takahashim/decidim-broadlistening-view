@@ -6,7 +6,7 @@ import icon from "src/decidim/icon";
 /**
  * Settings Dialog for density filter configuration
  */
-export class SettingsDialog {
+export default class SettingsDialog {
   /**
    * @param {Object} options
    * @param {number} options.maxDensity - Current max density value (0-1)

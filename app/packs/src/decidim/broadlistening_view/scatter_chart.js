@@ -1,6 +1,6 @@
 // Scatter Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
-import { getClusterColor, INACTIVE_COLOR } from "./colors.js";
+import { getClusterColor, INACTIVE_COLOR } from "./colors";
 
 /**
  * Wrap text to specified character limit
@@ -31,7 +31,7 @@ function wrapText(text, maxChars = 16) {
   return lines.join("<br>");
 }
 
-export class ScatterChart {
+export default class ScatterChart {
   constructor(container, data, options = {}) {
     this.container = container;
     this.arguments = data.arguments || [];

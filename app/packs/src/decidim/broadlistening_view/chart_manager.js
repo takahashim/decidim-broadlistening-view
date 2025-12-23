@@ -1,16 +1,16 @@
 // Chart Manager for Broadlistening visualization
 // Orchestrates scatter and treemap charts with toolbar controls
 
-import { ScatterChart } from "./scatter_chart.js";
-import { TreemapChart } from "./treemap_chart.js";
-import { CLUSTER_COLORS } from "./colors.js";
+import ScatterChart from "./scatter_chart";
+import TreemapChart from "./treemap_chart";
+import { CLUSTER_COLORS } from "./colors";
 import { escapeHtml } from "src/decidim/utilities/text";
 import icon from "src/decidim/icon";
-import { Toolbar, VIEW_MODES } from "./toolbar.js";
-import { SettingsDialog } from "./settings_dialog.js";
-import { FullscreenModal } from "./fullscreen_modal.js";
+import Toolbar, { VIEW_MODES } from "./toolbar";
+import SettingsDialog from "./settings_dialog";
+import FullscreenModal from "./fullscreen_modal";
 
-export class ChartManager {
+export default class ChartManager {
   constructor(container, data, options = {}) {
     this.container = container;
     this.data = data;
