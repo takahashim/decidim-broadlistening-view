@@ -5,23 +5,13 @@ import { ScatterChart } from "./scatter_chart.js";
 import { TreemapChart } from "./treemap_chart.js";
 import { CLUSTER_COLORS } from "./colors.js";
 import { escapeHtml } from "src/decidim/utilities/text";
+import icon from "src/decidim/icon";
 
 // View mode constants
 const VIEW_MODES = {
   SCATTER_ALL: "scatterAll",
   SCATTER_DENSITY: "scatterDensity",
   TREEMAP: "treemap"
-};
-
-// SVG Icons
-const ICONS = {
-  scatter: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="7.5" r="2.5"/><circle cx="12" cy="12" r="2.5"/></svg>`,
-  dense: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="9"/></svg>`,
-  treemap: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
-  settings: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>`,
-  fullscreen: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`,
-  close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
-  chevronRight: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`
 };
 
 export class ChartManager {
@@ -153,35 +143,36 @@ export class ChartManager {
         <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_ALL ? 'blv-toolbar__segment-btn--active' : ''}"
                 data-view-mode="${VIEW_MODES.SCATTER_ALL}"
                 title="全体">
-          ${ICONS.scatter}
+          ${icon("bubble-chart-line")}
           <span>全体</span>
         </button>
         <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_DENSITY ? 'blv-toolbar__segment-btn--active' : ''}"
                 data-view-mode="${VIEW_MODES.SCATTER_DENSITY}"
                 title="${densityBtnTitle}"
                 ${densityBtnDisabled ? 'disabled' : ''}>
-          ${ICONS.dense}
+          ${icon("focus-3-line")}
           <span>濃い意見</span>
         </button>
         <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.TREEMAP ? 'blv-toolbar__segment-btn--active' : ''}"
                 data-view-mode="${VIEW_MODES.TREEMAP}"
                 title="ツリーマップ">
-          ${ICONS.treemap}
+          ${icon("layout-grid-line")}
           <span>ツリー</span>
         </button>
       </div>
       <div class="blv-toolbar__actions">
         ${this.hasDensityData ? `
-        <button class="blv-toolbar__btn blv-toolbar__btn--icon"
+        <button class="blv-toolbar__btn"
                 data-action="settings"
                 title="表示設定">
-          ${ICONS.settings}
+          ${icon("settings-3-line")}
+          <span>設定</span>
         </button>
         ` : ''}
         <button class="blv-toolbar__btn blv-toolbar__btn--icon"
                 data-action="fullscreen"
                 title="フルスクリーン">
-          ${ICONS.fullscreen}
+          ${icon("fullscreen-line")}
         </button>
       </div>
     `;
@@ -232,7 +223,7 @@ export class ChartManager {
             全て
           </button>
           ${path.map((cluster, index) => `
-            <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
+            <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
             ${index === path.length - 1
               ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
               : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
@@ -374,7 +365,7 @@ export class ChartManager {
     breadcrumbEl.innerHTML = `
       <nav class="blv-cluster-breadcrumb__nav">
         <button class="blv-cluster-breadcrumb__btn" data-navigate-cluster="">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          ${icon("arrow-left-s-line")}
           全てのクラスターに戻る
         </button>
         <span class="blv-cluster-breadcrumb__current">
@@ -474,25 +465,25 @@ export class ChartManager {
           <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_ALL ? 'blv-toolbar__segment-btn--active' : ''}"
                   data-view-mode="${VIEW_MODES.SCATTER_ALL}"
                   title="全体">
-            ${ICONS.scatter}
+            ${icon("bubble-chart-line")}
             <span>全体</span>
           </button>
           <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.SCATTER_DENSITY ? 'blv-toolbar__segment-btn--active' : ''}"
                   data-view-mode="${VIEW_MODES.SCATTER_DENSITY}"
                   title="${densityBtnTitle}"
                   ${densityBtnDisabled ? 'disabled' : ''}>
-            ${ICONS.dense}
+            ${icon("focus-3-line")}
             <span>濃い意見</span>
           </button>
           <button class="blv-toolbar__segment-btn ${this.viewMode === VIEW_MODES.TREEMAP ? 'blv-toolbar__segment-btn--active' : ''}"
                   data-view-mode="${VIEW_MODES.TREEMAP}"
                   title="ツリーマップ">
-            ${ICONS.treemap}
+            ${icon("layout-grid-line")}
             <span>ツリー</span>
           </button>
         </div>
         <button class="blv-fullscreen-modal__close" data-action="close" title="閉じる">
-          ${ICONS.close}
+          ${icon("close-line")}
         </button>
       </div>
       <div class="blv-fullscreen-modal__breadcrumb"></div>
@@ -577,7 +568,7 @@ export class ChartManager {
             全て
           </button>
           ${path.map((cluster, index) => `
-            <span class="blv-breadcrumb__separator">${ICONS.chevronRight}</span>
+            <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
             ${index === path.length - 1
               ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
               : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
@@ -783,7 +774,7 @@ export class ChartManager {
         <div class="blv-settings-dialog__header">
           <h3>表示設定</h3>
           <button class="blv-settings-dialog__close" data-action="close">
-            ${ICONS.close}
+            ${icon("close-line")}
           </button>
         </div>
         <div class="blv-settings-dialog__body">
