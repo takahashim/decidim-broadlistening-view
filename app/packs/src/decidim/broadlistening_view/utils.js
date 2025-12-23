@@ -2,18 +2,19 @@
 
 /**
  * Escape HTML special characters to prevent XSS
+ * Uses browser's native DOM API for reliable escaping
  * @param {string} text - Text to escape
  * @returns {string} Escaped text
  */
-export function escapeHtml(text) {
-  if (!text) return "";
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+export const escapeHtml = (text) => {
+  if (!text) {
+    return "";
+  }
+
+  const el = document.createElement("div");
+  el.appendChild(document.createTextNode(text));
+  return el.innerHTML;
+};
 
 /**
  * Wrap text with line breaks at specified character limit
@@ -21,8 +22,10 @@ export function escapeHtml(text) {
  * @param {number} maxChars - Maximum characters per line
  * @returns {string} Wrapped text with <br> tags
  */
-export function wrapText(text, maxChars) {
-  if (!text || text.length <= maxChars) return text;
+export const wrapText = (text, maxChars) => {
+  if (!text || text.length <= maxChars) {
+    return text;
+  }
 
   const lines = [];
   let remaining = text;
@@ -37,7 +40,7 @@ export function wrapText(text, maxChars) {
   }
 
   return lines.join("<br>");
-}
+};
 
 /**
  * Wrap text with line breaks and limit number of lines
@@ -46,9 +49,13 @@ export function wrapText(text, maxChars) {
  * @param {number} maxLines - Maximum number of lines (default: 4)
  * @returns {string} Wrapped text with <br> tags, truncated with "..." if needed
  */
-export function wrapTextWithLimit(text, maxChars, maxLines = 4) {
-  if (!text) return "";
-  if (text.length <= maxChars) return text;
+export const wrapTextWithLimit = (text, maxChars, maxLines = 4) => {
+  if (!text) {
+    return "";
+  }
+  if (text.length <= maxChars) {
+    return text;
+  }
 
   const lines = [];
   let remaining = text;
@@ -68,4 +75,4 @@ export function wrapTextWithLimit(text, maxChars, maxLines = 4) {
   }
 
   return lines.join("<br>");
-}
+};
