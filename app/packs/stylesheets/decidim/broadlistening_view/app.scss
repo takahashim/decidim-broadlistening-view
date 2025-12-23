@@ -574,6 +574,11 @@
     }
   }
 
+  // Override library's [data-dialog-container] grid layout
+  .blv-settings-dialog__container {
+    display: block;
+  }
+
   &__body {
     padding: 1.25rem;
   }

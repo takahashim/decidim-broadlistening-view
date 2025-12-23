@@ -52,7 +52,7 @@ export default class SettingsDialog {
                 aria-label="閉じる">
           ${icon("close-line")}
         </button>
-        <div data-dialog-container>
+        <div data-dialog-container class="blv-settings-dialog__container">
           <h3 id="dialog-title-${escapeHtml(dialogId)}" data-dialog-title class="blv-settings-dialog__title">
             表示設定
           </h3>
