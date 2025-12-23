@@ -1,6 +1,7 @@
 // Treemap Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
-import { escapeHtml, wrapText } from "./utils";
+import { escapeHtml } from "./decidim_core_shim";
+import { wrapText } from "./utils";
 
 // Pastel color palette for treemap (matches cluster-view)
 const TREEMAP_COLORS = [

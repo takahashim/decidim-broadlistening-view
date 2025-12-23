@@ -1,6 +1,5 @@
 // Toolbar component for Broadlistening visualization
-import icon from "src/decidim/icon";
-import { escapeHtml } from "./utils";
+import { icon, escapeHtml } from "./decidim_core_shim";
 
 // View mode constants (shared with chart_manager.js)
 export const VIEW_MODES = {

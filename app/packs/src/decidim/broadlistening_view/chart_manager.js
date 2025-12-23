@@ -4,8 +4,7 @@
 import ScatterChart from "./scatter_chart";
 import TreemapChart from "./treemap_chart";
 import { CLUSTER_COLORS } from "./colors";
-import { escapeHtml } from "./utils";
-import icon from "src/decidim/icon";
+import { icon, escapeHtml } from "./decidim_core_shim";
 import Toolbar, { VIEW_MODES } from "./toolbar";
 import SettingsDialog from "./settings_dialog";
 import FullscreenModal from "./fullscreen_modal";

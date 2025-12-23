@@ -1,8 +1,7 @@
 // Settings Dialog component for Broadlistening visualization
 // Uses a11y-dialog-component for accessibility
 import Dialog from "a11y-dialog-component";
-import icon from "src/decidim/icon";
-import { escapeHtml } from "./utils";
+import { icon, escapeHtml } from "./decidim_core_shim";
 
 /**
  * Settings Dialog for density filter configuration

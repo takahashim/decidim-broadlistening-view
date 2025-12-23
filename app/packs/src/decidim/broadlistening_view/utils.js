@@ -1,22 +1,6 @@
 // Utility functions for Broadlistening visualization
 
 /**
- * Escape HTML special characters to prevent XSS
- * Uses browser's native DOM API for reliable escaping
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-export const escapeHtml = (text) => {
-  if (!text) {
-    return "";
-  }
-
-  const el = document.createElement("div");
-  el.appendChild(document.createTextNode(text));
-  return el.innerHTML;
-};
-
-/**
  * Wrap text with line breaks at specified character limit
  * @param {string} text - Text to wrap
  * @param {number} maxChars - Maximum characters per line

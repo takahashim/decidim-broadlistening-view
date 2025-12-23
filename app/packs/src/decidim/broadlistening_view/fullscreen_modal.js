@@ -1,5 +1,5 @@
 // Fullscreen Modal component for Broadlistening visualization
-import icon from "src/decidim/icon";
+import { icon } from "./decidim_core_shim";
 import Toolbar, { VIEW_MODES } from "./toolbar";
 
 /**
