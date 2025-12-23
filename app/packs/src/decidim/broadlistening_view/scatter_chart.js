@@ -1,36 +1,7 @@
 // Scatter Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
 import { getClusterColor, INACTIVE_COLOR } from "./colors";
-import { escapeHtml } from "./utils";
-
-/**
- * Wrap text to specified character limit
- * @param {string} text - Text to wrap
- * @param {number} maxChars - Maximum characters per line
- * @returns {string} Wrapped text with <br> tags
- */
-function wrapText(text, maxChars = 16) {
-  if (!text || text.length <= maxChars) return text;
-
-  const words = text.split("");
-  const lines = [];
-  let currentLine = "";
-
-  for (const char of words) {
-    if (currentLine.length >= maxChars) {
-      lines.push(currentLine);
-      currentLine = char;
-    } else {
-      currentLine += char;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines.join("<br>");
-}
+import { escapeHtml, wrapText, wrapTextWithLimit } from "./utils";
 
 export default class ScatterChart {
   constructor(container, data, options = {}) {
@@ -290,7 +261,7 @@ export default class ScatterChart {
 
     // Add argument text (with wrapping, escaped for HTML safety)
     const text = escapeHtml(argument.argument || "");
-    const wrapped = this.wrapHoverText(text, 30);
+    const wrapped = wrapTextWithLimit(text, 30);
     lines.push(wrapped);
 
     // Add cluster info based on current view
@@ -326,31 +297,6 @@ export default class ScatterChart {
         if (cluster) {
           lines.push(`<b>[${escapeHtml(cluster.label)}]</b>`);
         }
-      }
-    }
-
-    return lines.join("<br>");
-  }
-
-  wrapHoverText(text, maxChars) {
-    if (!text) return "";
-    if (text.length <= maxChars) return text;
-
-    const lines = [];
-    let remaining = text;
-
-    while (remaining.length > 0) {
-      if (remaining.length <= maxChars) {
-        lines.push(remaining);
-        break;
-      }
-      lines.push(remaining.substring(0, maxChars));
-      remaining = remaining.substring(maxChars);
-
-      // Limit to 4 lines
-      if (lines.length >= 4) {
-        lines[lines.length - 1] += "...";
-        break;
       }
     }
 

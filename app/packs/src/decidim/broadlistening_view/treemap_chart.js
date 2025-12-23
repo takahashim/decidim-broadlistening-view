@@ -1,6 +1,6 @@
 // Treemap Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
-import { escapeHtml } from "./utils";
+import { escapeHtml, wrapText } from "./utils";
 
 // Pastel color palette for treemap (matches cluster-view)
 const TREEMAP_COLORS = [
@@ -15,17 +15,6 @@ const TREEMAP_COLORS = [
   "#a6e3ae", // mint
   "#f1e4d6"  // cream
 ];
-
-/**
- * Wrap text with line breaks
- * @param {string} text - Text to wrap
- * @param {number} maxChars - Max characters per line
- * @returns {string} Wrapped text
- */
-function wrapText(text, maxChars) {
-  if (!text || text.length <= maxChars) return text;
-  return text.replace(new RegExp(`(.{${maxChars}})`, 'g'), '$1<br />');
-}
 
 export default class TreemapChart {
   constructor(container, data, options = {}) {
