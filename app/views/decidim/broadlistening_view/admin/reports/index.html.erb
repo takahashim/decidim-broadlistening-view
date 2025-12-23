@@ -32,6 +32,7 @@
               </td>
               <td><%= l(report.created_at, format: :short) %></td>
               <td>
+                <%= icon_link_to "eye-line", Decidim::EngineRouter.main_proxy(current_component).report_path(report), t(".preview"), class: "action-icon--preview", target: "_blank" %>
                 <%= icon_link_to "pencil-line", edit_report_path(report), t(".edit"), class: "action-icon--edit" %>
 
                 <% if report.published? %>

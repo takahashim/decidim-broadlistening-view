@@ -22,6 +22,7 @@ ja:
               actions: 操作
             published: 公開中
             draft: 下書き
+            preview: プレビュー
             edit: 編集
             publish: 公開
             unpublish: 非公開

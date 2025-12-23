@@ -22,6 +22,7 @@ en:
               actions: Actions
             published: Published
             draft: Draft
+            preview: Preview
             edit: Edit
             publish: Publish
             unpublish: Unpublish
