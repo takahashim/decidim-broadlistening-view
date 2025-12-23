@@ -4,7 +4,7 @@
 import ScatterChart from "./scatter_chart";
 import TreemapChart from "./treemap_chart";
 import { CLUSTER_COLORS } from "./colors";
-import { escapeHtml } from "src/decidim/utilities/text";
+import { escapeHtml } from "./utils";
 import icon from "src/decidim/icon";
 import Toolbar, { VIEW_MODES } from "./toolbar";
 import SettingsDialog from "./settings_dialog";
@@ -175,7 +175,7 @@ export default class ChartManager {
             <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
             ${index === path.length - 1
               ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
-              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${escapeHtml(cluster.id)}">${escapeHtml(cluster.label)}</button>`
             }
           `).join("")}
         </nav>
@@ -220,7 +220,7 @@ export default class ChartManager {
             <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
             ${index === path.length - 1
               ? `<span class="blv-breadcrumb__item blv-breadcrumb__item--current">${escapeHtml(cluster.label)}</span>`
-              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${cluster.id}">${escapeHtml(cluster.label)}</button>`
+              : `<button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="${escapeHtml(cluster.id)}">${escapeHtml(cluster.label)}</button>`
             }
           `).join("")}
         </nav>
@@ -308,20 +308,20 @@ export default class ChartManager {
       const color = CLUSTER_COLORS[index % CLUSTER_COLORS.length];
       const hasChildren = this.getChildClusters(cluster.id).length > 0;
       const cursorClass = hasChildren ? "cursor-pointer" : "";
-      const title = hasChildren ? 'title="クリックしてサブクラスターを表示"' : "";
+      const valueCount = cluster.value || 0;
 
       return `
-        <div class="card p-4 hover:shadow-md transition-shadow ${cursorClass}"
-             style="border-left: 4px solid ${color};"
-             data-cluster-id="${cluster.id}"
-             ${title}>
+        <div class="card p-4 hover:shadow-md transition-shadow ${escapeHtml(cursorClass)}"
+             style="border-left: 4px solid ${escapeHtml(color)};"
+             data-cluster-id="${escapeHtml(cluster.id)}"
+             ${hasChildren ? 'title="クリックしてサブクラスターを表示"' : ""}>
           <div class="flex items-center gap-3 mb-2">
-            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color};"></span>
+            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${escapeHtml(color)};"></span>
             <span class="font-semibold text-sm line-clamp-2">${escapeHtml(cluster.label)}</span>
           </div>
           <div class="flex items-center gap-2 mb-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${color}20; color: ${color};">
-              ${cluster.value || 0}件の意見
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${escapeHtml(color)}20; color: ${escapeHtml(color)};">
+              ${escapeHtml(String(valueCount))}件の意見
             </span>
           </div>
           ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${escapeHtml(cluster.takeaway)}</p>` : ""}

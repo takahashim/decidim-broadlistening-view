@@ -1,5 +1,6 @@
 // Toolbar component for Broadlistening visualization
 import icon from "src/decidim/icon";
+import { escapeHtml } from "./utils";
 
 // View mode constants (shared with chart_manager.js)
 export const VIEW_MODES = {
@@ -49,23 +50,25 @@ export default class Toolbar {
       ? "この設定条件では抽出できませんでした"
       : "濃い意見";
 
+    const activeClass = (mode) => viewMode === mode ? "blv-toolbar__segment-btn--active" : "";
+
     return `
       <div class="blv-toolbar__segment">
-        <button class="blv-toolbar__segment-btn ${viewMode === VIEW_MODES.SCATTER_ALL ? 'blv-toolbar__segment-btn--active' : ''}"
-                data-view-mode="${VIEW_MODES.SCATTER_ALL}"
+        <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.SCATTER_ALL))}"
+                data-view-mode="${escapeHtml(VIEW_MODES.SCATTER_ALL)}"
                 title="全体">
           ${icon("bubble-chart-line")}
           <span>全体</span>
         </button>
-        <button class="blv-toolbar__segment-btn ${viewMode === VIEW_MODES.SCATTER_DENSITY ? 'blv-toolbar__segment-btn--active' : ''}"
-                data-view-mode="${VIEW_MODES.SCATTER_DENSITY}"
-                title="${densityBtnTitle}"
-                ${densityBtnDisabled ? 'disabled' : ''}>
+        <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.SCATTER_DENSITY))}"
+                data-view-mode="${escapeHtml(VIEW_MODES.SCATTER_DENSITY)}"
+                title="${escapeHtml(densityBtnTitle)}"
+                ${densityBtnDisabled ? "disabled" : ""}>
           ${icon("focus-3-line")}
           <span>濃い意見</span>
         </button>
-        <button class="blv-toolbar__segment-btn ${viewMode === VIEW_MODES.TREEMAP ? 'blv-toolbar__segment-btn--active' : ''}"
-                data-view-mode="${VIEW_MODES.TREEMAP}"
+        <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.TREEMAP))}"
+                data-view-mode="${escapeHtml(VIEW_MODES.TREEMAP)}"
                 title="ツリーマップ">
           ${icon("layout-grid-line")}
           <span>ツリー</span>
@@ -79,14 +82,14 @@ export default class Toolbar {
           ${icon("settings-3-line")}
           <span>設定</span>
         </button>
-        ` : ''}
+        ` : ""}
         ${showFullscreen ? `
         <button class="blv-toolbar__btn blv-toolbar__btn--icon"
                 data-action="fullscreen"
                 title="フルスクリーン">
           ${icon("fullscreen-line")}
         </button>
-        ` : ''}
+        ` : ""}
       </div>
     `;
   }

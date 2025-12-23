@@ -2,6 +2,7 @@
 // Uses a11y-dialog-component for accessibility
 import Dialog from "a11y-dialog-component";
 import icon from "src/decidim/icon";
+import { escapeHtml } from "./utils";
 
 /**
  * Settings Dialog for density filter configuration
@@ -43,45 +44,45 @@ export default class SettingsDialog {
     this.element.className = "blv-settings-dialog";
 
     this.element.innerHTML = `
-      <div id="${dialogId}-content" class="blv-settings-dialog__content">
+      <div id="${escapeHtml(dialogId)}-content" class="blv-settings-dialog__content">
         <button type="button"
                 class="blv-settings-dialog__close"
-                data-dialog-close="${dialogId}"
+                data-dialog-close="${escapeHtml(dialogId)}"
                 data-dialog-closable
                 aria-label="閉じる">
           ${icon("close-line")}
         </button>
         <div data-dialog-container>
-          <h3 id="dialog-title-${dialogId}" data-dialog-title class="blv-settings-dialog__title">
+          <h3 id="dialog-title-${escapeHtml(dialogId)}" data-dialog-title class="blv-settings-dialog__title">
             表示設定
           </h3>
-          <div id="dialog-desc-${dialogId}" class="blv-settings-dialog__body">
+          <div id="dialog-desc-${escapeHtml(dialogId)}" class="blv-settings-dialog__body">
             <div class="blv-settings-dialog__field">
-              <label for="${dialogId}-maxDensity">上位何%の意見グループを表示するか</label>
+              <label for="${escapeHtml(dialogId)}-maxDensity">上位何%の意見グループを表示するか</label>
               <div class="blv-slider">
                 <input type="range"
-                       id="${dialogId}-maxDensity"
+                       id="${escapeHtml(dialogId)}-maxDensity"
                        min="0.1" max="1" step="0.1"
-                       value="${maxDensity}"
+                       value="${escapeHtml(String(maxDensity))}"
                        data-setting="maxDensity" />
                 <div class="blv-slider__labels">
                   <span>10%</span>
-                  <span class="blv-slider__value">${Math.round(maxDensity * 100)}%</span>
+                  <span class="blv-slider__value">${escapeHtml(String(Math.round(maxDensity * 100)))}%</span>
                   <span>100%</span>
                 </div>
               </div>
             </div>
             <div class="blv-settings-dialog__field">
-              <label for="${dialogId}-minValue">意見グループのサンプル数の最小数</label>
+              <label for="${escapeHtml(dialogId)}-minValue">意見グループのサンプル数の最小数</label>
               <div class="blv-slider">
                 <input type="range"
-                       id="${dialogId}-minValue"
+                       id="${escapeHtml(dialogId)}-minValue"
                        min="0" max="10" step="1"
-                       value="${minValue}"
+                       value="${escapeHtml(String(minValue))}"
                        data-setting="minValue" />
                 <div class="blv-slider__labels">
                   <span>0</span>
-                  <span class="blv-slider__value">${minValue}件</span>
+                  <span class="blv-slider__value">${escapeHtml(String(minValue))}件</span>
                   <span>10</span>
                 </div>
               </div>
@@ -91,7 +92,7 @@ export default class SettingsDialog {
         <div data-dialog-actions class="blv-settings-dialog__footer">
           <button type="button"
                   class="button button__sm button__transparent-secondary"
-                  data-dialog-close="${dialogId}">
+                  data-dialog-close="${escapeHtml(dialogId)}">
             キャンセル
           </button>
           <button type="button"
