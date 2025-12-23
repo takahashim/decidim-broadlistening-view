@@ -5,6 +5,7 @@ import ScatterChart from "./scatter_chart";
 import TreemapChart from "./treemap_chart";
 import { CLUSTER_COLORS } from "./colors";
 import { icon, escapeHtml } from "./decidim_core_shim";
+import { t } from "./i18n";
 import Toolbar, { VIEW_MODES } from "./toolbar";
 import SettingsDialog from "./settings_dialog";
 import FullscreenModal from "./fullscreen_modal";
@@ -98,7 +99,7 @@ export default class ChartManager {
 
   init() {
     if (this.arguments.length === 0) {
-      this.container.innerHTML = '<p class="text-gray text-center py-8">データがありません。</p>';
+      this.container.innerHTML = `<p class="text-gray text-center py-8">${escapeHtml(t("common.no_data"))}</p>`;
       return;
     }
 
@@ -165,10 +166,10 @@ export default class ChartManager {
     this.breadcrumbContainer.style.display = "block";
     this.breadcrumbContainer.innerHTML = `
       <div class="blv-breadcrumb__content">
-        <span class="blv-breadcrumb__label">表示中:</span>
+        <span class="blv-breadcrumb__label">${escapeHtml(t("breadcrumb.viewing"))}</span>
         <nav class="blv-breadcrumb__nav">
           <button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="">
-            全て
+            ${escapeHtml(t("breadcrumb.all"))}
           </button>
           ${path.map((cluster, index) => `
             <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
@@ -210,10 +211,10 @@ export default class ChartManager {
 
     container.innerHTML = `
       <div class="blv-breadcrumb__content">
-        <span class="blv-breadcrumb__label">表示中:</span>
+        <span class="blv-breadcrumb__label">${escapeHtml(t("breadcrumb.viewing"))}</span>
         <nav class="blv-breadcrumb__nav">
           <button class="blv-breadcrumb__item blv-breadcrumb__item--link" data-cluster-id="">
-            全て
+            ${escapeHtml(t("breadcrumb.all"))}
           </button>
           ${path.map((cluster, index) => `
             <span class="blv-breadcrumb__separator">${icon("arrow-right-s-line")}</span>
@@ -313,14 +314,14 @@ export default class ChartManager {
         <div class="card p-4 hover:shadow-md transition-shadow ${escapeHtml(cursorClass)}"
              style="border-left: 4px solid ${escapeHtml(color)};"
              data-cluster-id="${escapeHtml(cluster.id)}"
-             ${hasChildren ? 'title="クリックしてサブクラスターを表示"' : ""}>
+             ${hasChildren ? `title="${escapeHtml(t("cluster.click_to_expand"))}"` : ""}>
           <div class="flex items-center gap-3 mb-2">
             <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${escapeHtml(color)};"></span>
             <span class="font-semibold text-sm line-clamp-2">${escapeHtml(cluster.label)}</span>
           </div>
           <div class="flex items-center gap-2 mb-2">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${escapeHtml(color)}20; color: ${escapeHtml(color)};">
-              ${escapeHtml(String(valueCount))}件の意見
+              ${escapeHtml(t("common.opinions_count", { count: valueCount }))}
             </span>
           </div>
           ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${escapeHtml(cluster.takeaway)}</p>` : ""}
@@ -360,7 +361,7 @@ export default class ChartManager {
       <nav class="blv-cluster-breadcrumb__nav">
         <button class="blv-cluster-breadcrumb__btn" data-navigate-cluster="">
           ${icon("arrow-left-s-line")}
-          全てのクラスターに戻る
+          ${escapeHtml(t("cluster.back_to_all"))}
         </button>
         <span class="blv-cluster-breadcrumb__current">
           ${path.map(c => escapeHtml(c.label)).join(" > ")}

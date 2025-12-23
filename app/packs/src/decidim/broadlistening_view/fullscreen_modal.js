@@ -1,5 +1,6 @@
 // Fullscreen Modal component for Broadlistening visualization
-import { icon } from "./decidim_core_shim";
+import { icon, escapeHtml } from "./decidim_core_shim";
+import { t } from "./i18n";
 import Toolbar, { VIEW_MODES } from "./toolbar";
 
 /**
@@ -61,7 +62,7 @@ export default class FullscreenModal {
     this.modal.innerHTML = `
       <div class="blv-fullscreen-modal__header">
         ${this.toolbar.render()}
-        <button class="blv-fullscreen-modal__close" data-action="close" title="閉じる">
+        <button class="blv-fullscreen-modal__close" data-action="close" title="${escapeHtml(t("common.close"))}">
           ${icon("close-line")}
         </button>
       </div>

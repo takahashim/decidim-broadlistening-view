@@ -1,6 +1,7 @@
 // Treemap Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
 import { escapeHtml } from "./decidim_core_shim";
+import { t } from "./i18n";
 import { wrapText } from "./utils";
 
 // Pastel color palette for treemap (matches cluster-view)
@@ -35,7 +36,7 @@ export default class TreemapChart {
 
   render() {
     if (this.clusters.length === 0) {
-      this.container.innerHTML = '<p class="text-gray text-center py-8">データがありません。</p>';
+      this.container.innerHTML = `<p class="text-gray text-center py-8">${escapeHtml(t("common.no_data"))}</p>`;
       return;
     }
 
@@ -141,7 +142,7 @@ export default class TreemapChart {
       hoverlabel: {
         align: "left"
       },
-      texttemplate: "%{label}<br>%{value:,}件<br>%{percentEntry:.2%}",
+      texttemplate: t("treemap.text_template"),
       textfont: {
         size: 14
       },

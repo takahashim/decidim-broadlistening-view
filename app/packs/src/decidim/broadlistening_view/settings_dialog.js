@@ -1,7 +1,7 @@
 // Settings Dialog component for Broadlistening visualization
 // Uses a11y-dialog-component for accessibility
-import Dialog from "a11y-dialog-component";
-import { icon, escapeHtml } from "./decidim_core_shim";
+import { icon, escapeHtml, Dialogs } from "./decidim_core_shim";
+import { t } from "./i18n";
 
 /**
  * Settings Dialog for density filter configuration
@@ -48,16 +48,16 @@ export default class SettingsDialog {
                 class="blv-settings-dialog__close"
                 data-dialog-close="${escapeHtml(dialogId)}"
                 data-dialog-closable
-                aria-label="閉じる">
+                aria-label="${escapeHtml(t("common.close"))}">
           ${icon("close-line")}
         </button>
         <div data-dialog-container class="blv-settings-dialog__container">
           <h3 id="dialog-title-${escapeHtml(dialogId)}" data-dialog-title class="blv-settings-dialog__title">
-            表示設定
+            ${escapeHtml(t("settings.title"))}
           </h3>
           <div id="dialog-desc-${escapeHtml(dialogId)}" class="blv-settings-dialog__body">
             <div class="blv-settings-dialog__field">
-              <label for="${escapeHtml(dialogId)}-maxDensity">上位何%の意見グループを表示するか</label>
+              <label for="${escapeHtml(dialogId)}-maxDensity">${escapeHtml(t("settings.max_density_label"))}</label>
               <div class="blv-slider">
                 <input type="range"
                        id="${escapeHtml(dialogId)}-maxDensity"
@@ -72,7 +72,7 @@ export default class SettingsDialog {
               </div>
             </div>
             <div class="blv-settings-dialog__field">
-              <label for="${escapeHtml(dialogId)}-minValue">意見グループのサンプル数の最小数</label>
+              <label for="${escapeHtml(dialogId)}-minValue">${escapeHtml(t("settings.min_value_label"))}</label>
               <div class="blv-slider">
                 <input type="range"
                        id="${escapeHtml(dialogId)}-minValue"
@@ -81,7 +81,7 @@ export default class SettingsDialog {
                        data-setting="minValue" />
                 <div class="blv-slider__labels">
                   <span>0</span>
-                  <span class="blv-slider__value">${escapeHtml(String(minValue))}件</span>
+                  <span class="blv-slider__value">${escapeHtml(t("common.items_count", { count: minValue }))}</span>
                   <span>10</span>
                 </div>
               </div>
@@ -92,12 +92,12 @@ export default class SettingsDialog {
           <button type="button"
                   class="button button__sm button__transparent-secondary"
                   data-dialog-close="${escapeHtml(dialogId)}">
-            キャンセル
+            ${escapeHtml(t("common.cancel"))}
           </button>
           <button type="button"
                   class="button button__sm button__secondary"
                   data-action="apply">
-            適用
+            ${escapeHtml(t("common.apply"))}
           </button>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default class SettingsDialog {
     document.body.appendChild(this.element);
 
     // Initialize a11y-dialog-component
-    this.dialog = new Dialog(`[data-dialog="${dialogId}"]`, {
+    this.dialog = new Dialogs(`[data-dialog="${dialogId}"]`, {
       closingSelector: `[data-dialog-close="${dialogId}"]`,
       backdropSelector: `[data-dialog="${dialogId}"]`,
       labelledby: `dialog-title-${dialogId}`,
@@ -138,7 +138,7 @@ export default class SettingsDialog {
         if (e.target.dataset.setting === "maxDensity") {
           valueDisplay.textContent = `${Math.round(value * 100)}%`;
         } else {
-          valueDisplay.textContent = `${value}件`;
+          valueDisplay.textContent = t("common.items_count", { count: value });
         }
       });
     });

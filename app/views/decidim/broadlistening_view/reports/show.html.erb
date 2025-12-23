@@ -1,6 +1,7 @@
 <% add_decidim_page_title(report.title) %>
 <%= append_javascript_pack_tag "decidim_broadlistening_view" %>
 <%= append_stylesheet_pack_tag "decidim_broadlistening_view" %>
+<%= broadlistening_view_js_config %>
 
 <%= render layout: "layouts/decidim/shared/layout_center", locals: { columns: 10 } do %>
 
@@ -50,7 +51,7 @@
             <div class="card p-4 hover:shadow-md transition-shadow cursor-pointer"
                  style="border-left: 4px solid <%= cluster_color(index) %>;"
                  data-cluster-id="<%= cluster["id"] %>"
-                 title="クリックしてサブクラスターを表示">
+                 title="<%= t("decidim.broadlistening_view.js.cluster.click_to_expand") %>">
               <div class="flex items-center gap-3 mb-2">
                 <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: <%= cluster_color(index) %>;"></span>
                 <span class="font-semibold text-sm line-clamp-2"><%= cluster["label"] %></span>

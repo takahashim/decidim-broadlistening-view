@@ -24,6 +24,20 @@ module Decidim
       def format_count(count)
         number_with_delimiter(count)
       end
+
+      # Generate JavaScript configuration for i18n messages
+      # Returns a hidden element with data attribute containing messages
+      # JavaScript reads from this element, avoiding timing issues with Turbo
+      def broadlistening_view_js_config
+        messages = I18n.t("decidim.broadlistening_view.js", default: {})
+        return "" if messages.blank?
+
+        content_tag(:div,
+                    "",
+                    id: "broadlistening-view-i18n",
+                    hidden: true,
+                    data: { messages: messages.to_json })
+      end
     end
   end
 end

@@ -5,6 +5,7 @@ import ChartManager from "../src/decidim/broadlistening_view/chart_manager";
 import ScatterChart from "../src/decidim/broadlistening_view/scatter_chart";
 import TreemapChart from "../src/decidim/broadlistening_view/treemap_chart";
 import { CLUSTER_COLORS, getClusterColor, getColorByIndex } from "../src/decidim/broadlistening_view/colors";
+import { t } from "../src/decidim/broadlistening_view/i18n";
 
 // Export for global access
 window.DecidimBroadlisteningView = {
@@ -16,13 +17,13 @@ window.DecidimBroadlisteningView = {
   getColorByIndex,
 };
 
-// Auto-initialize charts on DOM ready
-document.addEventListener("DOMContentLoaded", () => {
+// Initialize on DOMContentLoaded (v0.29) or turbo:load (v0.31 + Turbo navigation)
+// The initialized check in initializeCharts() prevents double initialization
+document.addEventListener("turbo:load", () => {
   initializeCharts();
 });
 
-// Also handle turbo:load for Turbo Drive navigation
-document.addEventListener("turbo:load", () => {
+window.addEventListener("DOMContentLoaded", () => {
   initializeCharts();
 });
 
@@ -45,7 +46,7 @@ function initializeCharts() {
         element.dataset.initialized = "true";
       } catch (error) {
         console.error("Failed to initialize chart manager:", error);
-        element.innerHTML = '<p class="callout alert">チャートの初期化に失敗しました。</p>';
+        element.innerHTML = `<p class="callout alert">${t("common.initialization_error")}</p>`;
       }
     }
   });

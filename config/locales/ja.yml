@@ -114,3 +114,35 @@ ja:
             min_value_hint: 指定件数以上の意見を持つグループを表示します
             close: 閉じる
           dense_not_available: 濃い意見データがありません
+      js:
+        common:
+          no_data: データがありません。
+          close: 閉じる
+          cancel: キャンセル
+          apply: 適用
+          items_count: "%{count}件"
+          opinions_count: "%{count}件の意見"
+          initialization_error: チャートの初期化に失敗しました。
+        treemap:
+          text_template: "%{label}<br>%{value:,}件<br>%{percentEntry:.2%}"
+        toolbar:
+          all: 全体
+          all_title: 全体
+          density: 濃い意見
+          density_title: 濃い意見
+          density_disabled_title: この設定条件では抽出できませんでした
+          treemap: ツリー
+          treemap_title: ツリーマップ
+          settings: 設定
+          settings_title: 表示設定
+          fullscreen_title: フルスクリーン
+        settings:
+          title: 表示設定
+          max_density_label: 上位何%の意見グループを表示するか
+          min_value_label: 意見グループのサンプル数の最小数
+        breadcrumb:
+          viewing: "表示中:"
+          all: 全て
+        cluster:
+          click_to_expand: クリックしてサブクラスターを表示
+          back_to_all: 全てのクラスターに戻る

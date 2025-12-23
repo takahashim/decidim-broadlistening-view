@@ -1,5 +1,6 @@
 // Toolbar component for Broadlistening visualization
 import { icon, escapeHtml } from "./decidim_core_shim";
+import { t } from "./i18n";
 
 // View mode constants (shared with chart_manager.js)
 export const VIEW_MODES = {
@@ -46,8 +47,8 @@ export default class Toolbar {
 
     const densityBtnDisabled = !hasDensityData || !isDenseGroupEnabled;
     const densityBtnTitle = densityBtnDisabled
-      ? "この設定条件では抽出できませんでした"
-      : "濃い意見";
+      ? t("toolbar.density_disabled_title")
+      : t("toolbar.density_title");
 
     const activeClass = (mode) => viewMode === mode ? "blv-toolbar__segment-btn--active" : "";
 
@@ -55,37 +56,37 @@ export default class Toolbar {
       <div class="blv-toolbar__segment">
         <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.SCATTER_ALL))}"
                 data-view-mode="${escapeHtml(VIEW_MODES.SCATTER_ALL)}"
-                title="全体">
+                title="${escapeHtml(t("toolbar.all_title"))}">
           ${icon("bubble-chart-line")}
-          <span>全体</span>
+          <span>${escapeHtml(t("toolbar.all"))}</span>
         </button>
         <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.SCATTER_DENSITY))}"
                 data-view-mode="${escapeHtml(VIEW_MODES.SCATTER_DENSITY)}"
                 title="${escapeHtml(densityBtnTitle)}"
                 ${densityBtnDisabled ? "disabled" : ""}>
           ${icon("focus-3-line")}
-          <span>濃い意見</span>
+          <span>${escapeHtml(t("toolbar.density"))}</span>
         </button>
         <button class="blv-toolbar__segment-btn ${escapeHtml(activeClass(VIEW_MODES.TREEMAP))}"
                 data-view-mode="${escapeHtml(VIEW_MODES.TREEMAP)}"
-                title="ツリーマップ">
+                title="${escapeHtml(t("toolbar.treemap_title"))}">
           ${icon("layout-grid-line")}
-          <span>ツリー</span>
+          <span>${escapeHtml(t("toolbar.treemap"))}</span>
         </button>
       </div>
       <div class="blv-toolbar__actions">
         ${showSettings && hasDensityData ? `
         <button class="blv-toolbar__btn"
                 data-action="settings"
-                title="表示設定">
+                title="${escapeHtml(t("toolbar.settings_title"))}">
           ${icon("settings-3-line")}
-          <span>設定</span>
+          <span>${escapeHtml(t("toolbar.settings"))}</span>
         </button>
         ` : ""}
         ${showFullscreen ? `
         <button class="blv-toolbar__btn blv-toolbar__btn--icon"
                 data-action="fullscreen"
-                title="フルスクリーン">
+                title="${escapeHtml(t("toolbar.fullscreen_title"))}">
           ${icon("fullscreen-line")}
         </button>
         ` : ""}
@@ -143,7 +144,7 @@ export default class Toolbar {
       if (btn.dataset.viewMode === VIEW_MODES.SCATTER_DENSITY) {
         const isDisabled = !hasDensityData || !isDenseGroupEnabled;
         btn.disabled = isDisabled;
-        btn.title = isDisabled ? "この設定条件では抽出できませんでした" : "濃い意見";
+        btn.title = isDisabled ? t("toolbar.density_disabled_title") : t("toolbar.density_title");
       }
     });
 

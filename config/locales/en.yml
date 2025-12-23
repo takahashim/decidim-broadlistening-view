@@ -114,3 +114,35 @@ en:
             min_value_hint: Show groups with at least this many opinions
             close: Close
           dense_not_available: Dense opinion data not available
+      js:
+        common:
+          no_data: No data available.
+          close: Close
+          cancel: Cancel
+          apply: Apply
+          items_count: "%{count} items"
+          opinions_count: "%{count} opinions"
+          initialization_error: Failed to initialize chart.
+        treemap:
+          text_template: "%{label}<br>%{value:,} items<br>%{percentEntry:.2%}"
+        toolbar:
+          all: All
+          all_title: All opinions
+          density: Dense
+          density_title: Dense opinions
+          density_disabled_title: No results with current filter settings
+          treemap: Tree
+          treemap_title: Treemap
+          settings: Settings
+          settings_title: Display settings
+          fullscreen_title: Fullscreen
+        settings:
+          title: Display Settings
+          max_density_label: Top percentile of opinion groups to show
+          min_value_label: Minimum sample size for opinion groups
+        breadcrumb:
+          viewing: "Viewing:"
+          all: All
+        cluster:
+          click_to_expand: Click to show subclusters
+          back_to_all: Back to all clusters

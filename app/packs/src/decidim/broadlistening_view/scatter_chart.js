@@ -2,6 +2,7 @@
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
 import { getClusterColor, INACTIVE_COLOR } from "./colors";
 import { escapeHtml } from "./decidim_core_shim";
+import { t } from "./i18n";
 import { wrapText, wrapTextWithLimit } from "./utils";
 
 export default class ScatterChart {
@@ -64,7 +65,7 @@ export default class ScatterChart {
 
   render() {
     if (this.arguments.length === 0) {
-      this.container.innerHTML = '<p class="text-gray text-center py-8">データがありません。</p>';
+      this.container.innerHTML = `<p class="text-gray text-center py-8">${escapeHtml(t("common.no_data"))}</p>`;
       return;
     }
 
