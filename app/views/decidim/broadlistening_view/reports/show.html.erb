@@ -1,4 +1,4 @@
-<% add_decidim_page_title(report.title) %>
+<% add_decidim_page_title(translated_attribute(report.title)) %>
 <%= append_javascript_pack_tag "decidim_broadlistening_view" %>
 <%= append_stylesheet_pack_tag "decidim_broadlistening_view" %>
 <%= broadlistening_view_js_config %>
@@ -7,7 +7,7 @@
 
   <section class="layout-main__section layout-main__heading">
     <div class="flex justify-center">
-      <h1 class="title-decorator my-8"><%= report.title %></h1>
+      <h1 class="title-decorator my-8"><%= translated_attribute(report.title) %></h1>
     </div>
 
     <div class="text-center text-gray mb-8">

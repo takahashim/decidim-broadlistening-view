@@ -3,9 +3,16 @@
 module Decidim
   module BroadlisteningView
     class Report < ApplicationRecord
+      include Decidim::TranslatableResource
+      include Decidim::TranslatableAttributes
+
       self.table_name = "decidim_broadlistening_view_reports"
 
       belongs_to :component, foreign_key: "decidim_component_id", class_name: "Decidim::Component"
+
+      delegate :organization, to: :component
+
+      translatable_fields :title, :description
 
       validates :title, presence: true
 

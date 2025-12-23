@@ -18,9 +18,9 @@
         <% @reports.each do |report| %>
           <%= link_to report_path(report), class: "card card--action hover:no-underline" do %>
             <div class="card__content p-4">
-              <h3 class="card__title h5 mb-2"><%= report.title %></h3>
-              <% if report.description.present? %>
-                <p class="card__text text-gray-2 mb-4"><%= truncate(report.description, length: 150) %></p>
+              <h3 class="card__title h5 mb-2"><%= translated_attribute(report.title) %></h3>
+              <% if translated_attribute(report.description).present? %>
+                <p class="card__text text-gray-2 mb-4"><%= truncate(translated_attribute(report.description), length: 150) %></p>
               <% end %>
               <div class="flex gap-4 text-sm text-gray">
                 <span><%= t("decidim.broadlistening_view.reports.index.comments_count", count: report.comment_num) %></span>

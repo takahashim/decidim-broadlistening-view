@@ -4,14 +4,16 @@ module Decidim
   module BroadlisteningView
     module Admin
       class ReportForm < Decidim::Form
+        include Decidim::TranslatableAttributes
+
         mimic :report
 
-        attribute :title, String
-        attribute :description, String
+        translatable_attribute :title, String
+        translatable_attribute :description, String
         attribute :json_file
         attribute :json_text, String
 
-        validates :title, presence: true
+        validates :title, translatable_presence: true
         validate :validate_json_data
 
         def result_data
@@ -19,8 +21,7 @@ module Decidim
         end
 
         def map_model(model)
-          self.title = model.title
-          self.description = model.description
+          # title and description are handled automatically by TranslatableAttributes
           self.json_text = model.result_data.to_json if model.result_data.present?
         end
 

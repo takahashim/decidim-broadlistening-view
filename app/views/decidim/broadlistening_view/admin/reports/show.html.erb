@@ -1,7 +1,7 @@
-<% add_decidim_page_title(report.title) %>
+<% add_decidim_page_title(translated_attribute(report.title)) %>
 <div class="item_show__header">
   <h1 class="item_show__header-title">
-    <%= report.title %>
+    <%= translated_attribute(report.title) %>
     <div class="ml-auto flex gap-2">
       <% unless report.published? %>
         <%= link_to t(".publish"), publish_report_path(report), method: :post, class: "button button__sm button__secondary" %>
@@ -30,10 +30,10 @@
         <dd class="mt-1"><%= l(report.created_at, format: :long) %></dd>
       </div>
 
-      <% if report.description.present? %>
+      <% if translated_attribute(report.description).present? %>
         <div class="md:col-span-2">
           <dt class="text-sm text-gray"><%= t(".description") %></dt>
-          <dd class="mt-1"><%= simple_format(report.description) %></dd>
+          <dd class="mt-1"><%= simple_format(translated_attribute(report.description)) %></dd>
         </div>
       <% end %>
     </dl>
@@ -70,6 +70,7 @@
     <div class="card-section">
       <h3 class="text-lg font-semibold mb-4"><%= t(".preview") %></h3>
       <%= append_javascript_pack_tag "decidim_broadlistening_view" %>
+      <%= broadlistening_view_js_config %>
 
       <script id="report-data-<%= report.id %>" type="application/json">
         <%= raw report.result_data.to_json %>
