@@ -1,6 +1,7 @@
 // Scatter Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
 import { getClusterColor, INACTIVE_COLOR } from "./colors";
+import { escapeHtml } from "./utils";
 
 /**
  * Wrap text to specified character limit
@@ -95,10 +96,27 @@ export default class ScatterChart {
       return;
     }
 
-    const colors = this.getPointColors();
-    const annotations = this.getClusterAnnotations();
+    const trace = this.buildTrace();
+    const layout = this.buildLayout();
+    const config = {
+      responsive: true,
+      displayModeBar: true,
+      modeBarButtonsToRemove: ["select2d", "lasso2d", "resetScale2d", "toImage", "zoom2d"],
+      displaylogo: false,
+      scrollZoom: true
+    };
 
-    const trace = {
+    Plotly.newPlot(this.container, [trace], layout, config);
+  }
+
+  /**
+   * Build trace data for Plotly
+   * @returns {Object} Plotly trace object
+   */
+  buildTrace() {
+    const colors = this.getPointColors();
+
+    return {
       x: this.arguments.map(a => a.x),
       y: this.arguments.map(a => a.y),
       mode: "markers",
@@ -118,8 +136,16 @@ export default class ScatterChart {
         font: { size: 12, family: "sans-serif" }
       }
     };
+  }
 
-    const layout = {
+  /**
+   * Build layout for Plotly
+   * @returns {Object} Plotly layout object
+   */
+  buildLayout() {
+    const annotations = this.getClusterAnnotations();
+
+    return {
       showlegend: false,
       hovermode: "closest",
       dragmode: "pan",
@@ -140,20 +166,14 @@ export default class ScatterChart {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)"
     };
-
-    const config = {
-      responsive: true,
-      displayModeBar: true,
-      modeBarButtonsToRemove: ["select2d", "lasso2d", "resetScale2d", "toImage", "zoom2d"],
-      displaylogo: false,
-      scrollZoom: true
-    };
-
-    Plotly.newPlot(this.container, [trace], layout, config);
   }
 
   /**
    * Get cluster ID at specific level from an argument's cluster_ids
+   * Cluster IDs follow the format "${level}_${index}" (e.g., "1_0", "2_3")
+   * @param {string[]} clusterIds - Array of cluster IDs
+   * @param {number} level - Target level
+   * @returns {string|undefined} Cluster ID at the specified level
    */
   getClusterIdAtLevel(clusterIds, level) {
     return clusterIds.find(id => id.startsWith(`${level}_`));
@@ -268,8 +288,8 @@ export default class ScatterChart {
   formatHoverText(argument) {
     const lines = [];
 
-    // Add argument text (with wrapping)
-    const text = argument.argument || "";
+    // Add argument text (with wrapping, escaped for HTML safety)
+    const text = escapeHtml(argument.argument || "");
     const wrapped = this.wrapHoverText(text, 30);
     lines.push(wrapped);
 
@@ -282,7 +302,7 @@ export default class ScatterChart {
       if (clusterId) {
         const cluster = this.clusterById.get(clusterId);
         if (cluster) {
-          lines.push(`<b>[${cluster.label}]</b>`);
+          lines.push(`<b>[${escapeHtml(cluster.label)}]</b>`);
         }
       }
     } else if (selectedClusterId) {
@@ -294,7 +314,7 @@ export default class ScatterChart {
       if (childId) {
         const cluster = this.clusterById.get(childId);
         if (cluster) {
-          lines.push(`<b>[${cluster.label}]</b>`);
+          lines.push(`<b>[${escapeHtml(cluster.label)}]</b>`);
         }
       }
     } else {
@@ -304,7 +324,7 @@ export default class ScatterChart {
       if (clusterId) {
         const cluster = this.clusterById.get(clusterId);
         if (cluster) {
-          lines.push(`<b>[${cluster.label}]</b>`);
+          lines.push(`<b>[${escapeHtml(cluster.label)}]</b>`);
         }
       }
     }
@@ -339,11 +359,20 @@ export default class ScatterChart {
 
   /**
    * Update chart options and re-render
+   * Uses Plotly.react for smoother updates (preserves zoom/pan state)
    * @param {Object} newOptions - New options to merge
    */
   update(newOptions) {
     this.options = { ...this.options, ...newOptions };
-    this.render();
+
+    if (this.arguments.length === 0) {
+      return;
+    }
+
+    const trace = this.buildTrace();
+    const layout = this.buildLayout();
+
+    Plotly.react(this.container, [trace], layout);
   }
 
   /**

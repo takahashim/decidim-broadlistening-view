@@ -1,5 +1,6 @@
 // Treemap Chart for Broadlistening visualization
 import Plotly from "../../../vendor/plotly-2.35.0.min.js";
+import { escapeHtml } from "./utils";
 
 // Pastel color palette for treemap (matches cluster-view)
 const TREEMAP_COLORS = [
@@ -104,6 +105,7 @@ export default class TreemapChart {
         isFiltered = true;
       }
       if (isClusterFiltering) {
+        // Cluster IDs follow the format "${level}_${index}" (e.g., "1_0", "2_3")
         const deepestClusterId = arg.cluster_ids.find(id => id.startsWith(`${this.maxLevel}_`));
         if (deepestClusterId && !filteredClusterIds.has(deepestClusterId)) {
           isFiltered = true;
@@ -127,13 +129,13 @@ export default class TreemapChart {
       ids: allNodes.map(n => n.id),
       labels: allNodes.map(n => {
         const maxChars = n.id === level ? 50 : 15;
-        return wrapText(n.label, maxChars);
+        return wrapText(escapeHtml(n.label), maxChars);
       }),
       parents: allNodes.map(n => n.parent),
       values: allNodes.map(n => n.filtered ? 0 : n.value),
       customdata: allNodes.map(n => {
         if (n.filtered) return "";
-        return wrapText(n.takeaway, 15);
+        return wrapText(escapeHtml(n.takeaway), 15);
       }),
       level: level,
       branchvalues: "total",
