@@ -28,13 +28,31 @@ module Decidim
         private
 
         def parse_json_data
-          if json_file.present?
-            JSON.parse(json_file.read)
-          elsif json_text.present?
-            JSON.parse(json_text)
-          end
+          raw = if json_file.present?
+                  json_file.read
+                elsif json_text.present?
+                  json_text
+                end
+          return unless raw
+
+          # Kouchou AI uses NaN, so we can allow them
+          parsed = JSON.parse(raw, allow_nan: true)
+          sanitize_non_finite_floats(parsed)
         rescue JSON::ParserError
           nil
+        end
+
+        def sanitize_non_finite_floats(obj)
+          case obj
+          when Float
+            obj.finite? ? obj : nil
+          when Hash
+            obj.transform_values { |v| sanitize_non_finite_floats(v) }
+          when Array
+            obj.map { |v| sanitize_non_finite_floats(v) }
+          else
+            obj
+          end
         end
 
         def validate_json_data
