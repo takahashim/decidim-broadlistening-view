@@ -74,7 +74,7 @@ export default class ScatterChart {
     const config = {
       responsive: true,
       displayModeBar: true,
-      modeBarButtonsToRemove: ["select2d", "lasso2d", "resetScale2d", "toImage", "zoom2d"],
+      modeBarButtonsToRemove: ["select2d", "lasso2d", "resetScale2d", "toImage", "zoom2d", "pan2d", "hoverClosestCartesian", "hoverCompareCartesian"],
       displaylogo: false,
       scrollZoom: true
     };
