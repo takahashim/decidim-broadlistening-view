@@ -324,7 +324,7 @@ export default class ChartManager {
               ${escapeHtml(t("common.opinions_count", { count: valueCount }))}
             </span>
           </div>
-          ${cluster.takeaway ? `<p class="text-gray-2 text-sm line-clamp-3">${escapeHtml(cluster.takeaway)}</p>` : ""}
+          ${cluster.takeaway ? `<p class="text-black text-sm">${escapeHtml(cluster.takeaway)}</p>` : ""}
         </div>
       `;
     }).join("");
