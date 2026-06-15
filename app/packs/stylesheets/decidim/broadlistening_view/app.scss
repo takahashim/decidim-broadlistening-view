@@ -1,5 +1,13 @@
 // Decidim Broadlistening View Styles
 
+// Plotly modebar - ensure horizontal layout (Decidim global CSS can interfere)
+.modebar-container {
+  .modebar-group {
+    display: flex !important;
+    flex-direction: row !important;
+  }
+}
+
 // Chart wrapper and container
 .blv-chart-wrapper {
   width: 100%;
